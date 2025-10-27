@@ -54,6 +54,145 @@
                 max-width: 100%;
             }
         }
+        
+        /* Animations pour la navbar mobile */
+        .slide-in {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+        
+        .slide-out {
+            animation: slideOut 0.3s ease-out forwards;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(-100%);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+            }
+            to {
+                transform: translateX(-100%);
+            }
+        }
+        
+        /* Responsive pour les tableaux */
+        @media (max-width: 768px) {
+            .mobile-table {
+                font-size: 0.75rem;
+            }
+            
+            .mobile-table th,
+            .mobile-table td {
+                padding: 0.25rem 0.5rem;
+            }
+            
+            .mobile-table .action-buttons {
+                display: flex;
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+        }
+        
+        /* Responsive pour les cartes */
+        @media (max-width: 640px) {
+            .mobile-card {
+                padding: 1rem;
+            }
+            
+            .mobile-card h3 {
+                font-size: 0.875rem;
+            }
+            
+            .mobile-card p {
+                font-size: 0.75rem;
+            }
+        }
+
+        /* Styles pour les conteneurs de graphiques */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        .chart-container canvas {
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Animation de chargement pour les graphiques */
+        @keyframes chartFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chart-fade-in {
+            animation: chartFadeIn 0.6s ease-out;
+        }
+
+        /* Styles pour les cartes de statistiques */
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 24px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+            pointer-events: none;
+        }
+
+        .stat-card.blue {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .stat-card.green {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .stat-card.yellow {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            backdrop-filter: blur(10px);
+        }
     </style>
 </head>
 <body class="bg-gray-50" x-data="adminApp()" x-init="init()">
@@ -81,9 +220,22 @@
     </div>
 
     <!-- Interface principale -->
-    <div x-show="loggedInAdmin" class="flex h-screen">
-        <!-- Sidebar -->
-        <div class="w-64 bg-white shadow-lg flex flex-col">
+    <div x-show="loggedInAdmin" class="flex h-screen flex-col md:flex-row">
+        <!-- Navbar mobile -->
+        <div class="md:hidden bg-white shadow-sm border-b border-gray-200 p-4 flex justify-between items-center">
+            <h2 class="text-xl font-bold text-gray-800">Administration</h2>
+            <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-2 rounded-md text-gray-600 hover:bg-gray-100">
+                <svg x-show="!mobileMenuOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+                <svg x-show="mobileMenuOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Sidebar (Desktop) -->
+        <div class="hidden md:flex md:w-64 bg-white shadow-lg flex-col">
             <div class="flex items-center justify-between h-16 px-4 border-b border-gray-200">
                 <h2 class="text-xl font-bold text-gray-800">Administration</h2>
             </div>
@@ -144,6 +296,84 @@
             </div>
         </div>
 
+        <!-- Menu mobile (caché par défaut) -->
+        <div x-show="mobileMenuOpen" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-300"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 md:hidden">
+            <div class="fixed inset-0 bg-black opacity-50" @click="mobileMenuOpen = false"></div>
+            <div class="fixed left-0 top-0 bottom-0 w-64 bg-white shadow-lg overflow-y-auto"
+                 x-class="mobileMenuOpen ? 'slide-in' : 'slide-out'">
+                <div class="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-gray-800">Administration</h2>
+                    <button @click="mobileMenuOpen = false" class="p-2 rounded-md text-gray-600 hover:bg-gray-100">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 space-y-6">
+                    <div>
+                        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Navigation</h3>
+                        <div class="space-y-1">
+                            <button @click="activeView = 'dashboard'; mobileMenuOpen = false" 
+                                    :class="activeView === 'dashboard' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'text-gray-700 hover:bg-gray-100 border-transparent'"
+                                    class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-md border">
+                                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                                </svg>
+                                Aperçu
+                            </button>
+                            <button @click="activeView = 'schools'; mobileMenuOpen = false" 
+                                    :class="activeView === 'schools' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'text-gray-700 hover:bg-gray-100 border-transparent'"
+                                    class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-md border">
+                                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                </svg>
+                                Écoles
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Actions rapides</h3>
+                        <div class="space-y-2">
+                            <button @click="showAddSchoolModal = true; mobileMenuOpen = false" class="w-full bg-blue-600 text-white py-2 px-3 rounded-md text-sm font-medium hover:bg-blue-700">
+                                Ajouter une école
+                            </button>
+                            <button @click="exportDataToExcel(); mobileMenuOpen = false" class="w-full bg-green-600 text-white py-2 px-3 rounded-md text-sm font-medium hover:bg-green-700">
+                                Exporter données
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h3 class="text-sm font-medium text-gray-700 mb-2">Prix par défaut</h3>
+                        <form @submit.prevent="setDefaultPriceForAll(); mobileMenuOpen = false" class="space-y-2">
+                            <input type="number" step="0.01" x-model="defaultPriceForm.price" placeholder="Prix (FCFA)" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" required>
+                            <button type="submit" class="w-full bg-gray-700 text-white py-2 px-3 rounded-md text-sm font-medium hover:bg-gray-800" :disabled="isLoading">
+                                Appliquer à tous
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="border-t border-gray-200 p-4">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center">
+                            <span x-text="loggedInAdmin.username.charAt(0).toUpperCase()"></span>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-gray-700" x-text="loggedInAdmin.username"></p>
+                            <button @click="logout()" class="text-xs text-gray-500 hover:text-gray-700">Déconnexion</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Contenu principal -->
         <div class="flex-1 flex flex-col overflow-hidden">
             <header class="bg-white shadow-sm border-b border-gray-200">
@@ -152,58 +382,66 @@
                 </div>
             </header>
 
-            <main class="flex-1 overflow-y-auto p-6 bg-gray-50">
+            <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50">
                 <!-- Tableau de bord -->
                 <div x-show="activeView === 'dashboard'" class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-white rounded-lg shadow p-6">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-500">Écoles</p>
-                                    <p class="text-2xl font-bold text-gray-900" x-text="stats.totalSchools"></p>
-                                </div>
+                        <div class="stat-card blue chart-fade-in">
+                            <div class="stat-icon">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-white/80 text-sm font-medium mb-1">Écoles</p>
+                                <p class="text-3xl font-bold text-white" x-text="stats.totalSchools"></p>
                             </div>
                         </div>
-                        <div class="bg-white rounded-lg shadow p-6">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-500">Élèves</p>
-                                    <p class="text-2xl font-bold text-gray-900" x-text="stats.totalStudents"></p>
-                                </div>
+                        <div class="stat-card green chart-fade-in" style="animation-delay: 0.1s">
+                            <div class="stat-icon">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-white/80 text-sm font-medium mb-1">Élèves</p>
+                                <p class="text-3xl font-bold text-white" x-text="stats.totalStudents"></p>
                             </div>
                         </div>
-                        <div class="bg-white rounded-lg shadow p-6">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium text-gray-500">Revenu total</p>
-                                    <p class="text-2xl font-bold text-gray-900" x-text="`${stats.totalRevenue.toFixed(2)} FCFA`"></p>
-                                </div>
+                        <div class="stat-card yellow chart-fade-in" style="animation-delay: 0.2s">
+                            <div class="stat-icon">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-white/80 text-sm font-medium mb-1">Revenu total</p>
+                                <p class="text-3xl font-bold text-white" x-text="`${stats.totalRevenue.toFixed(2)} FCFA`"></p>
                             </div>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-white rounded-lg shadow p-6">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4">Répartition des élèves par école</h3>
-                            <canvas id="studentsChart" width="400" height="200"></canvas>
+                        <div class="bg-white rounded-xl shadow-lg p-6 chart-fade-in" style="animation-delay: 0.3s">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                </svg>
+                                Répartition des élèves par école
+                            </h3>
+                            <div class="chart-container">
+                                <canvas id="studentsChart"></canvas>
+                            </div>
                         </div>
-                        <div class="bg-white rounded-lg shadow p-6">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4">Revenus par école</h3>
-                            <canvas id="revenueChart" width="400" height="200"></canvas>
+                        <div class="bg-white rounded-xl shadow-lg p-6 chart-fade-in" style="animation-delay: 0.4s">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                </svg>
+                                Revenus par école
+                            </h3>
+                            <div class="chart-container">
+                                <canvas id="revenueChart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -211,10 +449,10 @@
                 <!-- Gestion des écoles -->
                 <div x-show="activeView === 'schools'" class="space-y-6">
                     <div class="bg-white rounded-lg shadow">
-                        <div class="px-6 py-4 border-b border-gray-200">
+                        <div class="px-4 md:px-6 py-4 border-b border-gray-200">
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                                 <h2 class="text-xl font-semibold text-gray-800">Gestion des Écoles</h2>
-                                <div class="mt-3 sm:mt-0 flex space-x-2">
+                                <div class="mt-3 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                                     <button @click="exportSchoolsToExcel()" class="bg-gray-700 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-gray-800">
                                         Exporter les écoles
                                     </button>
@@ -224,43 +462,43 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="p-6 border-b border-gray-200">
+                        <div class="p-4 md:p-6 border-b border-gray-200">
                             <input type="text" x-model="filters.schoolName" placeholder="Rechercher une école..." 
                                    class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
                         </div>
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
+                            <table class="min-w-full divide-y divide-gray-200 mobile-table">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Matricule</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date de création</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Élèves</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prix/Élève</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant à Payer</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        <th class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
+                                        <th class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                                        <th class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Matricule</th>
+                                        <th class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Date</th>
+                                        <th class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Élèves</th>
+                                        <th class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Prix</th>
+                                        <th class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Montant</th>
+                                        <th class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Statut</th>
+                                        <th class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <template x-for="s in filteredSchools" :key="s.id">
                                         <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 cursor-pointer hover:text-blue-900" 
+                                            <td class="px-2 md:px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 cursor-pointer hover:text-blue-900" 
                                                 @click="viewSchoolStudents(s)" x-text="s.name" title="Cliquer pour voir les élèves"></td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
+                                            <td class="px-2 md:px-6 py-4 whitespace-nowrap">
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800" x-text="s.access_code"></span>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
+                                            <td class="px-2 md:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800" x-text="s.matricule"></span>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="formatDate(s.created_at)"></td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <td class="px-2 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell" x-text="formatDate(s.created_at)"></td>
+                                            <td class="px-2 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 <span x-text="`${s.student_count}/${s.student_limit}`" class="font-medium"></span>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="`${s.price_per_student} FCFA`"></td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900" x-text="`${(s.student_limit * s.price_per_student).toFixed(2)} FCFA`"></td> 
-                                            <td class="px-6 py-4 whitespace-nowrap">
+                                            <td class="px-2 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell" x-text="`${s.price_per_student} FCFA`"></td>
+                                            <td class="px-2 md:px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 hidden lg:table-cell" x-text="`${(s.student_limit * s.price_per_student).toFixed(2)} FCFA`"></td> 
+                                            <td class="px-2 md:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
                                                 <div class="flex items-center">
                                                     <button @click="toggleSchoolStatus(s)" :class="s.is_active ? 'bg-green-500' : 'bg-gray-300'" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out">
                                                         <span :class="s.is_active ? 'translate-x-5' : 'translate-x-0'" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
@@ -268,8 +506,8 @@
                                                     <span :class="s.is_active ? 'text-green-700' : 'text-yellow-700'" class="ml-2 text-xs font-medium" x-text="s.is_active ? 'Actif' : 'En attente'"></span>
                                                 </div>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <div class="flex space-x-2">
+                                            <td class="px-2 md:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <div class="flex space-x-2 action-buttons">
                                                     <button @click="openUpdateModal(s)" class="text-blue-600 hover:text-blue-900" title="Modifier">
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -305,9 +543,9 @@
                     <button @click="activeView = 'schools'" class="mb-4 bg-gray-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-gray-700">
                         ← Retour aux écoles
                     </button>
-                    <div class="bg-white rounded-lg shadow p-6">
+                    <div class="bg-white rounded-lg shadow p-4 md:p-6">
                         <h2 class="text-2xl font-semibold text-gray-800 mb-2" x-text="selectedSchool?.name"></h2>
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                             <div class="bg-blue-50 p-4 rounded-lg">
                                 <p class="text-sm text-gray-600">Élèves inscrits</p>
                                 <p class="text-2xl font-bold text-blue-600" x-text="selectedSchool?.student_count"></p>
@@ -327,22 +565,22 @@
                         </div>
                         <h3 class="text-lg font-semibold text-gray-800 mb-4">Liste des élèves</h3>
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
+                            <table class="min-w-full divide-y divide-gray-200 mobile-table">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prénom</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sexe</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date d'inscription</th>
+                                        <th class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
+                                        <th class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prénom</th>
+                                        <th class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sexe</th>
+                                        <th class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Date d'inscription</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <template x-for="student in selectedSchoolStudents" :key="student.id">
                                         <tr>
-                                            <td class="px-6 py-4 text-sm text-gray-900" x-text="student.last_name"></td>
-                                            <td class="px-6 py-4 text-sm text-gray-900" x-text="student.first_name"></td>
-                                            <td class="px-6 py-4 text-sm text-gray-500" x-text="student.sex"></td>
-                                            <td class="px-6 py-4 text-sm text-gray-500" x-text="formatDate(student.created_at)"></td>
+                                            <td class="px-2 md:px-6 py-4 text-sm text-gray-900" x-text="student.last_name"></td>
+                                            <td class="px-2 md:px-6 py-4 text-sm text-gray-900" x-text="student.first_name"></td>
+                                            <td class="px-2 md:px-6 py-4 text-sm text-gray-500" x-text="student.sex"></td>
+                                            <td class="px-2 md:px-6 py-4 text-sm text-gray-500 hidden sm:table-cell" x-text="formatDate(student.created_at)"></td>
                                         </tr>
                                     </template>
                                 </tbody>
@@ -609,6 +847,7 @@
                 schoolForPrice: null,
                 studentsChart: null,
                 revenueChart: null,
+                mobileMenuOpen: false,
 
                 async init() {
                     const savedAdmin = localStorage.getItem("admin");
@@ -696,9 +935,43 @@
                 },
 
                 renderCharts() {
+                    // Palette de couleurs moderne
+                    const colors = {
+                        primary: 'rgba(59, 130, 246, 0.8)',
+                        primaryLight: 'rgba(59, 130, 246, 0.2)',
+                        secondary: 'rgba(16, 185, 129, 0.8)',
+                        secondaryLight: 'rgba(16, 185, 129, 0.2)',
+                        accent: 'rgba(251, 146, 60, 0.8)',
+                        accentLight: 'rgba(251, 146, 60, 0.2)',
+                        purple: 'rgba(139, 92, 246, 0.8)',
+                        purpleLight: 'rgba(139, 92, 246, 0.2)',
+                        pink: 'rgba(236, 72, 153, 0.8)',
+                        pinkLight: 'rgba(236, 72, 153, 0.2)',
+                        teal: 'rgba(20, 184, 166, 0.8)',
+                        tealLight: 'rgba(20, 184, 166, 0.2)',
+                        indigo: 'rgba(99, 102, 241, 0.8)',
+                        indigoLight: 'rgba(99, 102, 241, 0.2)'
+                    };
+
+                    // Créer des dégradés
+                    function createGradient(ctx, color1, color2) {
+                        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                        gradient.addColorStop(0, color1);
+                        gradient.addColorStop(1, color2);
+                        return gradient;
+                    }
+
                     if (document.getElementById('studentsChart')) {
                         const studentsCtx = document.getElementById('studentsChart').getContext('2d');
                         if (this.studentsChart) this.studentsChart.destroy();
+                        
+                        // Créer les dégradés pour chaque barre
+                        const gradients = this.schools.map((_, index) => {
+                            const colorKeys = Object.keys(colors);
+                            const colorKey = colorKeys[index % colorKeys.length];
+                            return createGradient(studentsCtx, colors[colorKey], colors[colorKey.replace('0.8', '0.2')]);
+                        });
+
                         this.studentsChart = new Chart(studentsCtx, {
                             type: 'bar',
                             data: {
@@ -706,29 +979,175 @@
                                 datasets: [{
                                     label: 'Nombre d\'élèves',
                                     data: this.schools.map(s => s.student_count),
-                                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
-                                    borderColor: 'rgb(59, 130, 246)',
-                                    borderWidth: 1
+                                    backgroundColor: gradients,
+                                    borderColor: this.schools.map((_, index) => {
+                                        const colorKeys = Object.keys(colors);
+                                        return colorKeys[index % colorKeys.length].replace('0.8', '1');
+                                    }),
+                                    borderWidth: 2,
+                                    borderRadius: 8,
+                                    borderSkipped: false,
                                 }]
                             },
-                            options: { responsive: true, scales: { y: { beginAtZero: true } } }
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                animation: {
+                                    duration: 1500,
+                                    easing: 'easeInOutQuart'
+                                },
+                                interaction: {
+                                    mode: 'index',
+                                    intersect: false,
+                                },
+                                plugins: {
+                                    legend: {
+                                        display: false
+                                    },
+                                    tooltip: {
+                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                        titleColor: '#fff',
+                                        bodyColor: '#fff',
+                                        padding: 12,
+                                        cornerRadius: 8,
+                                        displayColors: false,
+                                        callbacks: {
+                                            label: function(context) {
+                                                return `Élèves: ${context.parsed.y}`;
+                                            },
+                                            afterLabel: function(context) {
+                                                const school = this.schools[context.dataIndex];
+                                                return `Capacité: ${school.student_limit}`;
+                                            }.bind(this)
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        grid: {
+                                            display: false
+                                        },
+                                        ticks: {
+                                            font: {
+                                                size: 12,
+                                                weight: '500'
+                                            },
+                                            color: '#6b7280'
+                                        }
+                                    },
+                                    y: {
+                                        beginAtZero: true,
+                                        grid: {
+                                            color: 'rgba(0, 0, 0, 0.05)',
+                                            drawBorder: false
+                                        },
+                                        ticks: {
+                                            font: {
+                                                size: 12,
+                                                weight: '500'
+                                            },
+                                            color: '#6b7280',
+                                            padding: 8
+                                        }
+                                    }
+                                }
+                            }
                         });
                     }
+
                     if (document.getElementById('revenueChart')) {
                         const revenueCtx = document.getElementById('revenueChart').getContext('2d');
                         if (this.revenueChart) this.revenueChart.destroy();
+                        
+                        // Palette de couleurs pour le graphique circulaire
+                        const pieColors = [
+                            colors.primary,
+                            colors.secondary,
+                            colors.accent,
+                            colors.purple,
+                            colors.pink,
+                            colors.teal,
+                            colors.indigo
+                        ];
+
                         this.revenueChart = new Chart(revenueCtx, {
-                            type: 'pie',
+                            type: 'doughnut',
                             data: {
                                 labels: this.schools.map(s => s.name),
                                 datasets: [{
                                     label: 'Revenus (FCFA)',
                                     data: this.schools.map(s => s.student_count * s.price_per_student),
-                                    backgroundColor: ['rgba(255, 99, 132, 0.5)', 'rgba(54, 162, 235, 0.5)', 'rgba(255, 206, 86, 0.5)', 'rgba(75, 192, 192, 0.5)', 'rgba(153, 102, 255, 0.5)', 'rgba(255, 159, 64, 0.5)'],
-                                    borderWidth: 1
+                                    backgroundColor: pieColors,
+                                    borderColor: '#fff',
+                                    borderWidth: 3,
+                                    hoverOffset: 15,
+                                    hoverBorderWidth: 2,
+                                    hoverBorderColor: '#fff'
                                 }]
                             },
-                            options: { responsive: true }
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                animation: {
+                                    animateRotate: true,
+                                    animateScale: true,
+                                    duration: 1500,
+                                    easing: 'easeInOutQuart'
+                                },
+                                interaction: {
+                                    mode: 'nearest',
+                                    intersect: false
+                                },
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom',
+                                        labels: {
+                                            padding: 15,
+                                            font: {
+                                                size: 12,
+                                                weight: '500'
+                                            },
+                                            color: '#374151',
+                                            generateLabels: function(chart) {
+                                                const data = chart.data;
+                                                if (data.labels.length && data.datasets.length) {
+                                                    const dataset = data.datasets[0];
+                                                    const total = dataset.data.reduce((a, b) => a + b, 0);
+                                                    return data.labels.map((label, i) => {
+                                                        const value = dataset.data[i];
+                                                        const percentage = ((value / total) * 100).toFixed(1);
+                                                        return {
+                                                            text: `${label} (${percentage}%)`,
+                                                            fillStyle: dataset.backgroundColor[i],
+                                                            hidden: false,
+                                                            index: i
+                                                        };
+                                                    });
+                                                }
+                                                return [];
+                                            }
+                                        }
+                                    },
+                                    tooltip: {
+                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                        titleColor: '#fff',
+                                        bodyColor: '#fff',
+                                        padding: 12,
+                                        cornerRadius: 8,
+                                        displayColors: true,
+                                        callbacks: {
+                                            label: function(context) {
+                                                const value = context.parsed;
+                                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                const percentage = ((value / total) * 100).toFixed(1);
+                                                return `${context.label}: ${value.toFixed(2)} FCFA (${percentage}%)`;
+                                            }
+                                        }
+                                    }
+                                },
+                                cutout: '60%',
+                                radius: '90%'
+                            }
                         });
                     }
                 },
@@ -907,7 +1326,8 @@
 
                 printInvoice() {
                     document.getElementById('qrcode-print').innerHTML = '';
-                    const url = `http://127.0.0.1:5500/?code=${this.currentInvoice.access_code}`;
+                    const host = window.location.hostname;
+                    const url = `http://${host}/?code=${this.currentInvoice.access_code}`;
                     new QRCode(document.getElementById("qrcode-print"), { text: url, width: 100, height: 100 });
                     document.getElementById('invoice-print-area').classList.remove('hidden');
                     setTimeout(() => {
