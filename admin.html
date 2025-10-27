@@ -130,7 +130,7 @@
                 <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                     <h3 class="text-sm font-medium text-gray-700 mb-2">Prix par défaut</h3>
                     <form @submit.prevent="setDefaultPriceForAll()" class="space-y-2">
-                        <input type="number" step="0.01" x-model="defaultPriceForm.price" placeholder="Prix (€)" 
+                        <input type="number" step="0.01" x-model="defaultPriceForm.price" placeholder="Prix (FCFA)" 
                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" required>
                         <button type="submit" class="w-full bg-gray-700 text-white py-2 px-3 rounded-md text-sm font-medium hover:bg-gray-800" :disabled="isLoading">
                             Appliquer à tous
@@ -203,7 +203,7 @@
                                 </div>
                                 <div>
                                     <p class="text-sm font-medium text-gray-500">Revenu total</p>
-                                    <p class="text-2xl font-bold text-gray-900" x-text="`${stats.totalRevenue.toFixed(2)} €`"></p>
+                                    <p class="text-2xl font-bold text-gray-900" x-text="`${stats.totalRevenue.toFixed(2)} FCFA`"></p>
                                 </div>
                             </div>
                         </div>
@@ -267,8 +267,9 @@
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="formatDate(s.created_at)"></td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="s.student_count"></td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="`${s.price_per_student} €`"></td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900" x-text="`${(s.student_count * s.price_per_student).toFixed(2)} €`"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="`${s.price_per_student} FCFA`"></td>
+                                            <!-- Nouvelle ligne -->
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900" x-text="`${(s.student_limit * s.price_per_student).toFixed(2)} FCFA`"></td> 
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="flex items-center">
                                                     <button @click="toggleSchoolStatus(s)" :class="s.is_active ? 'bg-green-500' : 'bg-gray-300'" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out">
@@ -375,7 +376,7 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="student.sex"></td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="student.school_name"></td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="formatDate(student.created_at)"></td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="`${student.price_per_student} €`"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="`${student.price_per_student} FCFA`"></td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 <div class="flex space-x-2">
                                                     <button @click="openUpdateStudentModal(student)" class="text-blue-600 hover:text-blue-900" title="Modifier">
@@ -430,7 +431,7 @@
                         <input type="number" x-model="schoolForm.student_limit" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required min="1">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Prix par élève (€)</label>
+                        <label class="block text-sm font-medium text-gray-700">Prix par élève (FCFA)</label>
                         <input type="number" step="0.01" x-model="schoolForm.price_per_student" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required min="0">
                     </div>
                     <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
@@ -500,7 +501,7 @@
                 <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Modifier le prix pour <span x-text="schoolForPrice?.name"></span></h3>
                 <form @submit.prevent="updatePrice()" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Prix par élève (€)</label>
+                        <label class="block text-sm font-medium text-gray-700">Prix par élève (FCFA)</label>
                         <input type="number" step="0.01" x-model="newPriceForm.price" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required min="0">
                     </div>
                     <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
@@ -590,14 +591,14 @@
                             <tr>
                                 <td class="py-3 px-4 border border-gray-300">Frais d'inscription élèves</td>
                                 <td class="py-3 px-4 border border-gray-300 text-right" x-text="currentInvoice?.student_count"></td>
-                                <td class="py-3 px-4 border border-gray-300 text-right" x-text="`${currentInvoice?.price_per_student} €`"></td>
-                                <td class="py-3 px-4 border border-gray-300 text-right" x-text="`${(currentInvoice?.student_count * currentInvoice?.price_per_student).toFixed(2)} €`"></td>
+                                <td class="py-3 px-4 border border-gray-300 text-right" x-text="`${currentInvoice?.price_per_student} FCFA`"></td>
+                                <td class="py-3 px-4 border border-gray-300 text-right" x-text="`${(currentInvoice?.student_count * currentInvoice?.price_per_student).toFixed(2)} FCFA`"></td>
                             </tr>
                         </tbody>
                         <tfoot>
                             <tr>
                                 <td colspan="3" class="py-3 px-4 text-right font-semibold border border-gray-300">Total à payer</td>
-                                <td class="py-3 px-4 text-right font-semibold text-lg border border-gray-300" x-text="`${(currentInvoice?.student_count * currentInvoice?.price_per_student).toFixed(2)} €`"></td>
+                                <td class="py-3 px-4 text-right font-semibold text-lg border border-gray-300" x-text="`${(currentInvoice?.student_count * currentInvoice?.price_per_student).toFixed(2)} FCFA`"></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -664,15 +665,17 @@
                 <tbody>
                     <tr>
                         <td class="py-3 px-4 border border-gray-300">Frais d'inscription élèves</td>
-                        <td class="py-3 px-4 border border-gray-300 text-right" x-text="currentInvoice?.student_count"></td>
-                        <td class="py-3 px-4 border border-gray-300 text-right" x-text="`${currentInvoice?.price_per_student} €`"></td>
-                        <td class="py-3 px-4 border border-gray-300 text-right" x-text="`${(currentInvoice?.student_count * currentInvoice?.price_per_student).toFixed(2)} €`"></td>
+<!-- Nouvelles lignes -->
+<td class="py-2 px-4 border-b" x-text="`Forfait pour ${currentInvoice?.student_limit} élèves`"></td>
+<td class="py-2 px-4 border-b text-right" x-text="currentInvoice?.student_limit"></td>
+<td class="py-2 px-4 border-b text-right" x-text="`${(currentInvoice?.student_limit * currentInvoice?.price_per_student).toFixed(2)} €`"></td>
+<td class="py-2 px-4 text-right font-semibold text-lg border-t" x-text="`${(currentInvoice?.student_limit * currentInvoice?.price_per_student).toFixed(2)} €`"></td>
                     </tr>
                 </tbody>
                 <tfoot>
                     <tr>
                         <td colspan="3" class="py-3 px-4 text-right font-semibold border border-gray-300">Total à payer</td>
-                        <td class="py-3 px-4 text-right font-semibold text-lg border border-gray-300" x-text="`${(currentInvoice?.student_count * currentInvoice?.price_per_student).toFixed(2)} €`"></td>
+                        <td class="py-3 px-4 text-right font-semibold text-lg border border-gray-300" x-text="`${(currentInvoice?.student_count * currentInvoice?.price_per_student).toFixed(2)} FCFA`"></td>
                     </tr>
                 </tfoot>
             </table>
@@ -830,10 +833,12 @@
                 },
 
                 calculateStats() {
+ 
                     this.stats.totalSchools = this.schools.length;
                     this.stats.totalStudents = this.allStudents.length;
-                    this.stats.totalRevenue = this.schools.reduce((total, school) => total + (school.student_count * school.price_per_student), 0);
-                },
+                                // Nouvelle ligne
+                    this.stats.totalRevenue = this.schools.reduce((total, school) => total + (school.student_limit * school.price_per_student), 0);
+                    },
 
                 renderCharts() {
                     if (document.getElementById('studentsChart')) {
@@ -862,7 +867,7 @@
                             data: {
                                 labels: this.schools.map(s => s.name),
                                 datasets: [{
-                                    label: 'Revenus (€)',
+                                    label: 'Revenus (FCFA)',
                                     data: this.schools.map(s => s.student_count * s.price_per_student),
                                     backgroundColor: ['rgba(255, 99, 132, 0.5)', 'rgba(54, 162, 235, 0.5)', 'rgba(255, 206, 86, 0.5)', 'rgba(75, 192, 192, 0.5)', 'rgba(153, 102, 255, 0.5)', 'rgba(255, 159, 64, 0.5)'],
                                     borderWidth: 1
@@ -1151,7 +1156,8 @@
                         'Date de création': this.formatDate(s.created_at),
                         'Élèves': s.student_count, 
                         'Prix/Élève': s.price_per_student, 
-                        'Montant Total': (s.student_count * s.price_per_student).toFixed(2), 
+                        // Nouvelle ligne
+                        'Montant Total': (s.student_limit * s.price_per_student).toFixed(2),
                         'Statut': s.is_active ? 'Actif' : 'En attente' 
                     }));
                     const ws = XLSX.utils.json_to_sheet(data);
