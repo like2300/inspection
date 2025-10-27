@@ -1,0 +1,1211 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Administration - Inspection de l'Éducation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #invoice-print-area,
+            #invoice-print-area * {
+                visibility: visible;
+            }
+            #invoice-print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                font-size: 14px;
+                height: 100%;
+                overflow: visible;
+            }
+            #invoice-print-area .invoice-container {
+                width: 210mm;
+                min-height: 297mm;
+                margin: 0 auto;
+                padding: 20mm;
+                box-sizing: border-box;
+            }
+        }
+        
+        .invoice-container {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            padding: 20mm;
+            box-sizing: border-box;
+            background: white;
+        }
+        
+        @media screen {
+            .invoice-container {
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50" x-data="adminApp()" x-init="init()">
+    <!-- Authentification -->
+    <div x-show="!loggedInAdmin" class="min-h-screen flex items-center justify-center bg-gray-100">
+        <div class="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
+            <div class="text-center">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Connexion Administrateur</h2>
+                <p class="text-gray-600 mb-6">Veuillez vous connecter pour accéder au tableau de bord</p>
+            </div>
+            <form @submit.prevent="login()" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nom d'utilisateur</label>
+                    <input type="text" x-model="loginForm.username" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+                    <input type="password" x-model="loginForm.password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" :disabled="isLoading">
+                    <span x-text="isLoading ? 'Connexion...' : 'Se connecter'"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Interface principale -->
+    <div x-show="loggedInAdmin" class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white shadow-lg flex flex-col">
+            <div class="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+                <h2 class="text-xl font-bold text-gray-800">Administration</h2>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-6">
+                <div>
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Navigation</h3>
+                    <div class="space-y-1">
+                        <button @click="activeView = 'dashboard'" 
+                                :class="activeView === 'dashboard' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'text-gray-700 hover:bg-gray-100 border-transparent'"
+                                class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-md border">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                            </svg>
+                            Aperçu
+                        </button>
+                        <button @click="activeView = 'schools'" 
+                                :class="activeView === 'schools' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'text-gray-700 hover:bg-gray-100 border-transparent'"
+                                class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-md border">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
+                            Écoles
+                        </button>
+                        <button @click="activeView = 'students'" 
+                                :class="activeView === 'students' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'text-gray-700 hover:bg-gray-100 border-transparent'"
+                                class="w-full flex items-center px-3 py-2 text-sm font-medium rounded-md border">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                            </svg>
+                            Élèves
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Actions rapides</h3>
+                    <div class="space-y-2">
+                        <button @click="showAddSchoolModal = true" class="w-full bg-blue-600 text-white py-2 px-3 rounded-md text-sm font-medium hover:bg-blue-700">
+                            Ajouter une école
+                        </button>
+                        <button @click="showAddStudentModal = true" class="w-full bg-green-600 text-white py-2 px-3 rounded-md text-sm font-medium hover:bg-green-700">
+                            Ajouter un élève
+                        </button>
+                    </div>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">Prix par défaut</h3>
+                    <form @submit.prevent="setDefaultPriceForAll()" class="space-y-2">
+                        <input type="number" step="0.01" x-model="defaultPriceForm.price" placeholder="Prix (€)" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" required>
+                        <button type="submit" class="w-full bg-gray-700 text-white py-2 px-3 rounded-md text-sm font-medium hover:bg-gray-800" :disabled="isLoading">
+                            Appliquer à tous
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="border-t border-gray-200 p-4">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center">
+                        <span x-text="loggedInAdmin.username.charAt(0).toUpperCase()"></span>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-gray-700" x-text="loggedInAdmin.username"></p>
+                        <button @click="logout()" class="text-xs text-gray-500 hover:text-gray-700">Déconnexion</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenu principal -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="bg-white shadow-sm border-b border-gray-200">
+                <div class="flex items-center justify-between h-16 px-6">
+                    <h1 class="text-xl font-semibold text-gray-800" x-text="getPageTitle()"></h1>
+                    <div class="flex items-center space-x-3">
+                        <button @click="showAddAdminModal = true" class="bg-purple-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-purple-700">
+                            Ajouter Admin
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-y-auto p-6 bg-gray-50">
+                <!-- Tableau de bord -->
+                <div x-show="activeView === 'dashboard'" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500">Écoles</p>
+                                    <p class="text-2xl font-bold text-gray-900" x-text="stats.totalSchools"></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500">Élèves</p>
+                                    <p class="text-2xl font-bold text-gray-900" x-text="stats.totalStudents"></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-500">Revenu total</p>
+                                    <p class="text-2xl font-bold text-gray-900" x-text="`${stats.totalRevenue.toFixed(2)} €`"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Répartition des élèves par école</h3>
+                            <canvas id="studentsChart" width="400" height="200"></canvas>
+                        </div>
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Revenus par école</h3>
+                            <canvas id="revenueChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gestion des écoles -->
+                <div x-show="activeView === 'schools'" class="space-y-6">
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                <h2 class="text-xl font-semibold text-gray-800">Gestion des Écoles</h2>
+                                <div class="mt-3 sm:mt-0 flex space-x-2">
+                                    <button @click="exportSchoolsToExcel()" class="bg-gray-700 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-gray-800">
+                                        Exporter les écoles
+                                    </button>
+                                    <button @click="showAddSchoolModal = true" class="bg-blue-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700">
+                                        Ajouter une École
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-6 border-b border-gray-200">
+                            <input type="text" x-model="filters.schoolName" placeholder="Rechercher une école..." 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Matricule</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date de création</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Élèves</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prix/Élève</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Montant à Payer</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <template x-for="s in filteredSchools" :key="s.id">
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="s.name"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800" x-text="s.access_code"></span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800" x-text="s.matricule"></span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="formatDate(s.created_at)"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="s.student_count"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="`${s.price_per_student} €`"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900" x-text="`${(s.student_count * s.price_per_student).toFixed(2)} €`"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <button @click="toggleSchoolStatus(s)" :class="s.is_active ? 'bg-green-500' : 'bg-gray-300'" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out">
+                                                        <span :class="s.is_active ? 'translate-x-5' : 'translate-x-0'" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                                                    </button>
+                                                    <span :class="s.is_active ? 'text-green-700' : 'text-yellow-700'" class="ml-2 text-xs font-medium" x-text="s.is_active ? 'Actif' : 'En attente'"></span>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <div class="flex space-x-2">
+                                                    <button @click="openUpdateModal(s)" class="text-blue-600 hover:text-blue-900" title="Modifier">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <button @click="openPriceModal(s)" class="text-yellow-600 hover:text-yellow-900" title="Modifier prix">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <button @click="showInvoice(s)" class="text-purple-600 hover:text-purple-900" title="Facture">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <button @click="deleteSchool(s.id)" class="text-red-600 hover:text-red-900" title="Supprimer">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gestion des élèves -->
+                <div x-show="activeView === 'students'" class="space-y-6">
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                <h2 class="text-xl font-semibold text-gray-800">Liste des Élèves</h2>
+                                <div class="mt-3 sm:mt-0 flex space-x-2">
+                                    <button @click="exportToExcel()" class="bg-green-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-green-700">
+                                        Exporter en Excel
+                                    </button>
+                                    <button @click="showAddStudentModal = true" class="bg-blue-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700">
+                                        Ajouter un Élève
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-6 border-b border-gray-200">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div>
+                                    <input type="text" x-model="filters.studentName" placeholder="Rechercher un élève..." 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <select x-model="filters.schoolId" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                        <option value="">Toutes les écoles</option>
+                                        <template x-for="s in schools" :key="s.id">
+                                            <option :value="s.id" x-text="s.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div>
+                                    <select x-model="filters.sex" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                        <option value="">Tous les sexes</option>
+                                        <option value="M">M</option>
+                                        <option value="F">F</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <button @click="filters = { studentName: '', schoolId: '', sex: '' }" 
+                                            class="w-full bg-gray-200 text-gray-800 py-2 px-4 rounded-md text-sm font-medium hover:bg-gray-300">
+                                        Réinitialiser
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prénom</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sexe</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">École</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date d'inscription</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prix/Élève</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <template x-for="student in filteredStudents" :key="student.id">
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="student.last_name"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="student.first_name"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="student.sex"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="student.school_name"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="formatDate(student.created_at)"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="`${student.price_per_student} €`"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <div class="flex space-x-2">
+                                                    <button @click="openUpdateStudentModal(student)" class="text-blue-600 hover:text-blue-900" title="Modifier">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <button @click="deleteStudent(student.id)" class="text-red-600 hover:text-red-900" title="Supprimer">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal école -->
+    <div x-show="showAddSchoolModal" class="fixed inset-0 overflow-y-auto z-50">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity bg-gray-500 opacity-75"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" x-text="schoolToUpdate ? 'Modifier l\'école' : 'Ajouter une École'"></h3>
+                <form @submit.prevent="schoolToUpdate ? updateSchool() : createSchool()" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Nom de l'école</label>
+                        <input type="text" x-model="schoolForm.name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Matricule</label>
+                        <input type="text" x-model="schoolForm.matricule" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ex: ECOL001">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Téléphone</label>
+                        <input type="text" x-model="schoolForm.phone_number" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Adresse</label>
+                        <input type="text" x-model="schoolForm.address" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Limite d'élèves</label>
+                        <input type="number" x-model="schoolForm.student_limit" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required min="1">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Prix par élève (€)</label>
+                        <input type="number" step="0.01" x-model="schoolForm.price_per_student" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required min="0">
+                    </div>
+                    <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:col-start-2 sm:text-sm" :disabled="isLoading">
+                            <span x-text="schoolToUpdate ? 'Mettre à jour' : 'Créer'"></span>
+                        </button>
+                        <button type="button" @click="closeSchoolModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:col-start-1 sm:text-sm">
+                            Annuler
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal élève -->
+    <div x-show="showAddStudentModal" class="fixed inset-0 overflow-y-auto z-50">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity bg-gray-500 opacity-75"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" x-text="studentForm.id ? 'Modifier l\'élève' : 'Ajouter un Élève'"></h3>
+                <form @submit.prevent="studentForm.id ? updateStudent() : createStudent()" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Prénom</label>
+                        <input type="text" x-model="studentForm.first_name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Nom</label>
+                        <input type="text" x-model="studentForm.last_name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Sexe</label>
+                        <select x-model="studentForm.sex" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="M">M</option>
+                            <option value="F">F</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">École</label>
+                        <select x-model="studentForm.school_id" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                            <option value="">Sélectionnez une école</option>
+                            <template x-for="s in schools" :key="s.id">
+                                <option :value="s.id" x-text="s.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:col-start-2 sm:text-sm" :disabled="isLoading">
+                            <span x-text="studentForm.id ? 'Mettre à jour' : 'Créer'"></span>
+                        </button>
+                        <button type="button" @click="closeStudentModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:col-start-1 sm:text-sm">
+                            Annuler
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal prix -->
+    <div x-show="showPriceModal" class="fixed inset-0 overflow-y-auto z-50">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity bg-gray-500 opacity-75"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Modifier le prix pour <span x-text="schoolForPrice?.name"></span></h3>
+                <form @submit.prevent="updatePrice()" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Prix par élève (€)</label>
+                        <input type="number" step="0.01" x-model="newPriceForm.price" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required min="0">
+                    </div>
+                    <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:col-start-2 sm:text-sm" :disabled="isLoading">
+                            Mettre à jour
+                        </button>
+                        <button type="button" @click="closePriceModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:col-start-1 sm:text-sm">
+                            Annuler
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal admin -->
+    <div x-show="showAddAdminModal" class="fixed inset-0 overflow-y-auto z-50">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity bg-gray-500 opacity-75"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Ajouter un Administrateur</h3>
+                <form @submit.prevent="addAdmin()" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Nom d'utilisateur</label>
+                        <input type="text" x-model="newAdmin.username" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Mot de passe</label>
+                        <input type="password" x-model="newAdmin.password" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                    </div>
+                    <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:col-start-2 sm:text-sm" :disabled="isLoading">
+                            Ajouter
+                        </button>
+                        <button type="button" @click="showAddAdminModal = false" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:col-start-1 sm:text-sm">
+                            Annuler
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal facture -->
+    <div x-show="showInvoiceModal" class="fixed inset-0 overflow-y-auto z-50">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity bg-gray-500 opacity-75"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+                <div class="invoice-container">
+                    <div class="flex justify-between items-start mb-8">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">FACTURE</h2>
+                            <p class="text-gray-600 mt-2" x-text="currentInvoice?.name"></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-gray-600">Date : <span x-text="new Date().toLocaleDateString('fr-FR')"></span></p>
+                            <p class="text-gray-600">Code : <span class="font-mono" x-text="currentInvoice?.access_code"></span></p>
+                        </div>
+                    </div>
+                    <div class="mb-8">
+                        <div class="grid grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="font-semibold text-gray-700 mb-2">Émetteur</h3>
+                                <p class="text-gray-600">Inspection de l'Éducation</p>
+                                <p class="text-gray-600">Direction Régionale</p>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-700 mb-2">Destinataire</h3>
+                                <p class="text-gray-600" x-text="currentInvoice?.name"></p>
+                                <p class="text-gray-600" x-text="currentInvoice?.address || ''"></p>
+                                <p class="text-gray-600" x-text="currentInvoice?.phone_number || ''"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <table class="w-full mb-8 border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="py-3 px-4 text-left border border-gray-300">Description</th>
+                                <th class="py-3 px-4 text-right border border-gray-300">Qté</th>
+                                <th class="py-3 px-4 text-right border border-gray-300">P.U.</th>
+                                <th class="py-3 px-4 text-right border border-gray-300">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="py-3 px-4 border border-gray-300">Frais d'inscription élèves</td>
+                                <td class="py-3 px-4 border border-gray-300 text-right" x-text="currentInvoice?.student_count"></td>
+                                <td class="py-3 px-4 border border-gray-300 text-right" x-text="`${currentInvoice?.price_per_student} €`"></td>
+                                <td class="py-3 px-4 border border-gray-300 text-right" x-text="`${(currentInvoice?.student_count * currentInvoice?.price_per_student).toFixed(2)} €`"></td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="py-3 px-4 text-right font-semibold border border-gray-300">Total à payer</td>
+                                <td class="py-3 px-4 text-right font-semibold text-lg border border-gray-300" x-text="`${(currentInvoice?.student_count * currentInvoice?.price_per_student).toFixed(2)} €`"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    <div class="mt-8 flex justify-between items-center">
+                        <div class="flex flex-col items-center">
+                            <p class="text-xs text-gray-500 mb-2">Code d'accès</p>
+                            <div id="qrcode-preview"></div>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-gray-600 text-sm">Merci pour votre confiance</p>
+                            <p class="text-gray-500 text-xs mt-2">Facture émise par l'Inspection de l'Éducation</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense bg-gray-50 p-4 rounded-b-lg">
+                    <button @click="printInvoice()" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:col-start-2 sm:text-sm">
+                        Imprimer
+                    </button>
+                    <button @click="showInvoiceModal = false" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:col-start-1 sm:text-sm">
+                        Fermer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zone cachée pour impression -->
+    <div id="invoice-print-area" class="hidden">
+        <div class="invoice-container">
+            <div class="flex justify-between items-start mb-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">FACTURE</h2>
+                    <p class="text-gray-600 mt-2" x-text="currentInvoice?.name"></p>
+                </div>
+                <div class="text-right">
+                    <p class="text-gray-600">Date : <span x-text="new Date().toLocaleDateString('fr-FR')"></span></p>
+                    <p class="text-gray-600">Code : <span class="font-mono" x-text="currentInvoice?.access_code"></span></p>
+                </div>
+            </div>
+            <div class="mb-8">
+                <div class="grid grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="font-semibold text-gray-700 mb-2">Émetteur</h3>
+                        <p class="text-gray-600">Inspection de l'Éducation</p>
+                        <p class="text-gray-600">Direction Régionale</p>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-700 mb-2">Destinataire</h3>
+                        <p class="text-gray-600" x-text="currentInvoice?.name"></p>
+                        <p class="text-gray-600" x-text="currentInvoice?.address || ''"></p>
+                        <p class="text-gray-600" x-text="currentInvoice?.phone_number || ''"></p>
+                    </div>
+                </div>
+            </div>
+            <table class="w-full mb-8 border-collapse">
+                <thead>
+                    <tr class="bg-gray-100">
+                        <th class="py-3 px-4 text-left border border-gray-300">Description</th>
+                        <th class="py-3 px-4 text-right border border-gray-300">Qté</th>
+                        <th class="py-3 px-4 text-right border border-gray-300">P.U.</th>
+                        <th class="py-3 px-4 text-right border border-gray-300">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="py-3 px-4 border border-gray-300">Frais d'inscription élèves</td>
+                        <td class="py-3 px-4 border border-gray-300 text-right" x-text="currentInvoice?.student_count"></td>
+                        <td class="py-3 px-4 border border-gray-300 text-right" x-text="`${currentInvoice?.price_per_student} €`"></td>
+                        <td class="py-3 px-4 border border-gray-300 text-right" x-text="`${(currentInvoice?.student_count * currentInvoice?.price_per_student).toFixed(2)} €`"></td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="py-3 px-4 text-right font-semibold border border-gray-300">Total à payer</td>
+                        <td class="py-3 px-4 text-right font-semibold text-lg border border-gray-300" x-text="`${(currentInvoice?.student_count * currentInvoice?.price_per_student).toFixed(2)} €`"></td>
+                    </tr>
+                </tfoot>
+            </table>
+            <div class="mt-8 flex justify-between items-center">
+                <div class="flex flex-col items-center">
+                    <p class="text-xs text-gray-500 mb-2">Code d'accès</p>
+                    <div id="qrcode-print"></div>
+                </div>
+                <div class="text-center">
+                    <p class="text-gray-600 text-sm">Merci pour votre confiance</p>
+                    <p class="text-gray-500 text-xs mt-2">Facture émise par l'Inspection de l'Éducation</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div x-show="message.text" x-transition class="fixed top-4 right-4 z-50">
+        <div :class="{
+            'bg-green-50 border-green-200 text-green-800': message.type === 'success',
+            'bg-red-50 border-red-200 text-red-800': message.type === 'error',
+            'bg-blue-50 border-blue-200 text-blue-800': message.type === 'info',
+            'bg-yellow-50 border-yellow-200 text-yellow-800': message.type === 'warning'
+        }" class="rounded-md border p-4 max-w-sm">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg :class="{
+                        'text-green-400': message.type === 'success',
+                        'text-red-400': message.type === 'error',
+                        'text-blue-400': message.type === 'info',
+                        'text-yellow-400': message.type === 'warning'
+                    }" class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium" x-text="message.text"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createClient } = supabase;
+        const supabaseUrl = "https://kgeerjuindhoueyzfemk.supabase.co";
+        const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnZWVyanVpbmRob3VleXpmZW1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE0MzUyNTIsImV4cCI6MjA3NzAxMTI1Mn0.VOkXxOPL53o49FGZTQ1jP9jm_9rXhu30toRac-codjs";
+        const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+        function adminApp() {
+            return {
+                loggedInAdmin: null,
+                activeView: "dashboard",
+                schools: [],
+                allStudents: [],
+                stats: { totalSchools: 0, totalStudents: 0, totalRevenue: 0 },
+                isLoading: false,
+                message: { text: "", type: "info" },
+                filters: { studentName: "", schoolId: "", sex: "", schoolName: "" },
+                showAddSchoolModal: false,
+                showAddStudentModal: false,
+                showInvoiceModal: false,
+                showAddAdminModal: false,
+                showPriceModal: false,
+                loginForm: { username: "", password: "" },
+                schoolForm: { name: "", phone_number: "", address: "", student_limit: 50, price_per_student: 5.0, matricule: "" },
+                studentForm: { id: null, first_name: "", last_name: "", sex: "M", school_id: null },
+                newAdmin: { username: "", password: "" },
+                schoolToUpdate: null,
+                currentInvoice: null,
+                schoolForPrice: null,
+                newPriceForm: { price: 0 },
+                defaultPriceForm: { price: 5.0 },
+                studentsChart: null,
+                revenueChart: null,
+
+                async init() {
+                    const savedAdmin = localStorage.getItem("admin");
+                    if (savedAdmin) {
+                        this.loggedInAdmin = JSON.parse(savedAdmin);
+                        await this.fetchData();
+                    }
+                },
+
+                async login() {
+                    this.isLoading = true;
+                    const { data, error } = await supabaseClient.from('admins').select('*').eq('username', this.loginForm.username).single();
+                    if (error || !data) {
+                        this.showMessage("Nom d'utilisateur ou mot de passe incorrect.", "error");
+                        this.isLoading = false;
+                        return;
+                    }
+                    const passwordHash = CryptoJS.SHA256(this.loginForm.password).toString();
+                    if (data.password_hash !== passwordHash && data.password_hash !== this.loginForm.password) {
+                        this.showMessage("Nom d'utilisateur ou mot de passe incorrect.", "error");
+                        this.isLoading = false;
+                        return;
+                    }
+                    this.loggedInAdmin = data;
+                    localStorage.setItem("admin", JSON.stringify(data));
+                    await this.fetchData();
+                    this.isLoading = false;
+                },
+
+                async fetchData() {
+                    await Promise.all([this.fetchSchools(), this.fetchAllStudents()]);
+                    this.calculateStats();
+                    
+                    // Calculer le prix par défaut depuis la DB
+                    if (this.schools.length > 0) {
+                        const totalPrices = this.schools.reduce((sum, school) => sum + (school.price_per_student || 0), 0);
+                        const averagePrice = totalPrices / this.schools.length;
+                        this.defaultPriceForm.price = parseFloat(averagePrice.toFixed(2));
+                        // Mettre à jour le formulaire d'ajout d'école avec la valeur par défaut
+                        this.schoolForm.price_per_student = parseFloat(averagePrice.toFixed(2));
+                    } else {
+                        this.defaultPriceForm.price = 5.0;
+                        this.schoolForm.price_per_student = 5.0;
+                    }
+                    
+                    setTimeout(() => this.renderCharts(), 100);
+                },
+
+                async fetchSchools() {
+                    const { data: schoolsData, error: schoolsError } = await supabaseClient.from('schools').select('*');
+                    if (schoolsError) console.error('Erreur écoles:', schoolsError);
+                    
+                    let schoolsWithCounts = [];
+                    for (const school of (schoolsData || [])) {
+                        const { count: studentCount } = await supabaseClient.from('students').select('*', { count: 'exact', head: true }).eq('school_id', school.id);
+                        const { data: pricingData } = await supabaseClient.from('pricing').select('price_per_student').eq('school_id', school.id).single();
+                        schoolsWithCounts.push({
+                            ...school,
+                            student_count: studentCount || 0,
+                            price_per_student: pricingData ? pricingData.price_per_student : 0
+                        });
+                    }
+                    this.schools = schoolsWithCounts;
+                },
+
+                async fetchAllStudents() {
+                    const { data: studentsData, error: studentsError } = await supabaseClient.from('students').select('*');
+                    if (studentsError) console.error('Erreur élèves:', studentsError);
+                    
+                    let studentsWithSchools = [];
+                    for (const student of (studentsData || [])) {
+                        const { data: schoolData } = await supabaseClient.from('schools').select('name').eq('id', student.school_id).single();
+                        const { data: pricingData } = await supabaseClient.from('pricing').select('price_per_student').eq('school_id', student.school_id).single();
+                        studentsWithSchools.push({
+                            ...student,
+                            school_name: schoolData ? schoolData.name : 'École inconnue',
+                            price_per_student: pricingData ? pricingData.price_per_student : 0
+                        });
+                    }
+                    this.allStudents = studentsWithSchools;
+                },
+
+                calculateStats() {
+                    this.stats.totalSchools = this.schools.length;
+                    this.stats.totalStudents = this.allStudents.length;
+                    this.stats.totalRevenue = this.schools.reduce((total, school) => total + (school.student_count * school.price_per_student), 0);
+                },
+
+                renderCharts() {
+                    if (document.getElementById('studentsChart')) {
+                        const studentsCtx = document.getElementById('studentsChart').getContext('2d');
+                        if (this.studentsChart) this.studentsChart.destroy();
+                        this.studentsChart = new Chart(studentsCtx, {
+                            type: 'bar',
+                            data: {
+                                labels: this.schools.map(s => s.name),
+                                datasets: [{
+                                    label: 'Nombre d\'élèves',
+                                    data: this.schools.map(s => s.student_count),
+                                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                                    borderColor: 'rgb(59, 130, 246)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: { responsive: true, scales: { y: { beginAtZero: true } } }
+                        });
+                    }
+                    if (document.getElementById('revenueChart')) {
+                        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+                        if (this.revenueChart) this.revenueChart.destroy();
+                        this.revenueChart = new Chart(revenueCtx, {
+                            type: 'pie',
+                            data: {
+                                labels: this.schools.map(s => s.name),
+                                datasets: [{
+                                    label: 'Revenus (€)',
+                                    data: this.schools.map(s => s.student_count * s.price_per_student),
+                                    backgroundColor: ['rgba(255, 99, 132, 0.5)', 'rgba(54, 162, 235, 0.5)', 'rgba(255, 206, 86, 0.5)', 'rgba(75, 192, 192, 0.5)', 'rgba(153, 102, 255, 0.5)', 'rgba(255, 159, 64, 0.5)'],
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: { responsive: true }
+                        });
+                    }
+                },
+
+                getPageTitle() {
+                    return { dashboard: 'Tableau de Bord', schools: 'Gestion des Écoles', students: 'Gestion des Élèves' }[this.activeView] || 'Tableau de Bord';
+                },
+
+                openUpdateModal(school) {
+                    this.schoolForm = { ...school };
+                    this.schoolToUpdate = school;
+                    this.showAddSchoolModal = true;
+                },
+
+                closeSchoolModal() {
+                    this.showAddSchoolModal = false;
+                    this.schoolToUpdate = null;
+                    // Réinitialiser le formulaire avec la valeur par défaut
+                    this.schoolForm = { 
+                        name: "", 
+                        phone_number: "", 
+                        address: "", 
+                        student_limit: 50, 
+                        price_per_student: this.defaultPriceForm.price, 
+                        matricule: "" 
+                    };
+                },
+
+                async createSchool() {
+                    if (!this.schoolForm.name.trim()) {
+                        this.showMessage("Le nom de l'école est obligatoire.", "warning");
+                        return;
+                    }
+                    if (!this.schoolForm.matricule.trim()) {
+                        this.showMessage("Le matricule est obligatoire.", "warning");
+                        return;
+                    }
+                    this.isLoading = true;
+                    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+                    try {
+                        const { data: schoolData, error: schoolError } = await supabaseClient.from('schools').insert([{ 
+                            name: this.schoolForm.name,
+                            matricule: this.schoolForm.matricule,
+                            access_code: code, 
+                            phone_number: this.schoolForm.phone_number,
+                            address: this.schoolForm.address,
+                            student_limit: parseInt(this.schoolForm.student_limit)
+                        }]).select().single();
+                        
+                        if (schoolError) throw schoolError;
+                        
+                        const { error: pricingError } = await supabaseClient.from('pricing').insert([{ 
+                            school_id: schoolData.id, 
+                            price_per_student: parseFloat(this.schoolForm.price_per_student) 
+                        }]);
+                        
+                        if (pricingError) throw pricingError;
+                        
+                        this.showMessage(`École créée ! Code: ${code}`, "success");
+                        this.closeSchoolModal();
+                        await this.fetchData();
+                    } catch (error) {
+                        this.showMessage("Erreur: " + (error.message || "Vérifiez que le matricule n'existe pas déjà"), "error");
+                    }
+                    this.isLoading = false;
+                },
+
+                async updateSchool() {
+                    if (!this.schoolForm.name.trim()) {
+                        this.showMessage("Le nom de l'école est obligatoire.", "warning");
+                        return;
+                    }
+                    this.isLoading = true;
+                    try {
+                        const { name, phone_number, address, student_limit, is_active, matricule } = this.schoolForm;
+                        const { error: schoolError } = await supabaseClient.from('schools').update({ name, phone_number, address, student_limit, is_active, matricule }).eq('id', this.schoolForm.id);
+                        if (schoolError) throw schoolError;
+                        
+                        // Utiliser upsert avec onConflict pour éviter l'erreur de clé unique
+                        const { error: pricingError } = await supabaseClient.from('pricing').upsert({
+                            school_id: this.schoolForm.id,
+                            price_per_student: parseFloat(this.schoolForm.price_per_student)
+                        }, { 
+                            onConflict: 'school_id' 
+                        });
+                        if (pricingError) throw pricingError;
+                        
+                        this.showMessage("École mise à jour.", "success");
+                        this.closeSchoolModal();
+                        await this.fetchData();
+                    } catch (error) {
+                        this.showMessage("Erreur: " + (error.message || "Erreur inconnue"), "error");
+                    }
+                    this.isLoading = false;
+                },
+
+                async toggleSchoolStatus(school) {
+                    const { error } = await supabaseClient.from('schools').update({ is_active: !school.is_active }).eq('id', school.id);
+                    if (error) {
+                        this.showMessage("Erreur changement statut.", "error");
+                        return;
+                    }
+                    this.showMessage(`Statut de ${school.name} ${!school.is_active ? 'activé' : 'désactivé'}.`, "success");
+                    await this.fetchSchools();
+                },
+
+                async deleteSchool(id) {
+                    if (!confirm("Supprimer cette école ?")) return;
+                    const { error } = await supabaseClient.from('schools').delete().eq('id', id);
+                    if (error) {
+                        this.showMessage("Erreur suppression.", "error");
+                        return;
+                    }
+                    this.showMessage("École supprimée.", "success");
+                    await this.fetchData();
+                },
+
+                openUpdateStudentModal(student) {
+                    this.studentForm = { ...student };
+                    this.showAddStudentModal = true;
+                },
+
+                closeStudentModal() {
+                    this.showAddStudentModal = false;
+                    this.studentForm = { id: null, first_name: "", last_name: "", sex: "M", school_id: null };
+                },
+
+                async createStudent() {
+                    if (!this.studentForm.school_id) {
+                        this.showMessage("Veuillez sélectionner une école.", "warning");
+                        return;
+                    }
+
+                    this.isLoading = true;
+
+                    // Créer un nouvel objet SANS la propriété 'id'
+                    const studentToInsert = {
+                        first_name: this.studentForm.first_name,
+                        last_name: this.studentForm.last_name,
+                        sex: this.studentForm.sex,
+                        school_id: this.studentForm.school_id
+                    };
+
+                    const { error } = await supabaseClient.from('students').insert([studentToInsert]);
+
+                    if (error) {
+                        console.error("Erreur Supabase lors de la création de l'élève:", error);
+                        this.showMessage("Erreur création élève: " + error.message, "error");
+                        this.isLoading = false;
+                        return;
+                    }
+                    
+                    this.showMessage("Élève créé.", "success");
+                    this.closeStudentModal();
+                    await this.fetchAllStudents();
+                    await this.fetchSchools(); // Mettre à jour le nombre d'élèves
+                    this.calculateStats();
+                    this.isLoading = false;
+                },          
+                                
+                async updateStudent() {
+                    this.isLoading = true;
+                    const { error } = await supabaseClient.from('students').update(this.studentForm).eq('id', this.studentForm.id);
+                    
+                    if (error) {
+                        console.error("Erreur Supabase lors de la mise à jour de l'élève:", error);
+                        this.showMessage("Erreur mise à jour élève: " + error.message, "error");
+                        this.isLoading = false;
+                        return;
+                    }
+                    
+                    this.showMessage("Élève mis à jour.", "success");
+                    this.closeStudentModal();
+                    await this.fetchAllStudents();
+                    this.calculateStats();
+                    this.isLoading = false;
+                },
+
+                async deleteStudent(studentId) {
+                    if (!confirm("Supprimer cet élève ?")) return;
+                    const { error } = await supabaseClient.from('students').delete().eq('id', studentId);
+                    if (error) {
+                        this.showMessage("Erreur suppression élève.", "error");
+                        return;
+                    }
+                    this.showMessage("Élève supprimé.", "success");
+                    await this.fetchAllStudents();
+                    this.calculateStats();
+                },
+
+                async setDefaultPriceForAll() {
+                    this.isLoading = true;
+                    const { data: schools, error: fetchError } = await supabaseClient.from('schools').select('id');
+                    if (fetchError) {
+                        this.showMessage("Erreur récupération écoles.", "error");
+                        this.isLoading = false;
+                        return;
+                    }
+                    const updates = schools.map(s => supabaseClient.from('pricing').upsert({ school_id: s.id, price_per_student: this.defaultPriceForm.price }, { onConflict: 'school_id' }));
+                    const results = await Promise.all(updates);
+                    const hasError = results.some(r => r.error);
+                    if (hasError) {
+                        this.showMessage("Erreur mise à jour prix.", "error");
+                    } else {
+                        this.showMessage("Prix appliqué à toutes les écoles.", "success");
+                        await this.fetchSchools();
+                    }
+                    this.isLoading = false;
+                },
+
+                openPriceModal(school) {
+                    this.schoolForPrice = school;
+                    this.newPriceForm.price = school.price_per_student;
+                    this.showPriceModal = true;
+                },
+
+                closePriceModal() {
+                    this.showPriceModal = false;
+                    this.schoolForPrice = null;
+                    this.newPriceForm.price = 0;
+                },
+
+                async updatePrice() {
+                    this.isLoading = true;
+                    const { error } = await supabaseClient.from('pricing').upsert({ school_id: this.schoolForPrice.id, price_per_student: this.newPriceForm.price }, { onConflict: 'school_id' });
+                    if (error) {
+                        this.showMessage("Erreur mise à jour prix.", "error");
+                        this.isLoading = false;
+                        return;
+                    }
+                    this.showMessage("Prix mis à jour.", "success");
+                    this.closePriceModal();
+                    await this.fetchSchools();
+                    await this.fetchAllStudents(); // Mettre à jour les prix pour les élèves
+                    this.isLoading = false;
+                },
+
+                showInvoice(school) {
+                    this.currentInvoice = school;
+                    this.showInvoiceModal = true;
+                    document.getElementById('qrcode-preview').innerHTML = '';
+                    // get url server
+                    const host = window.location.hostname;
+                    const url = `http://${host}:5500/?code=${school.access_code}`;
+                    new QRCode(document.getElementById("qrcode-preview"), { text: url, width: 100, height: 100 });
+                },
+
+                printInvoice() {
+                    document.getElementById('qrcode-print').innerHTML = '';
+                    const url = `http://127.0.0.1:5500/?code=${this.currentInvoice.access_code}`;
+                    new QRCode(document.getElementById("qrcode-print"), { text: url, width: 100, height: 100 });
+                    document.getElementById('invoice-print-area').classList.remove('hidden');
+                    setTimeout(() => {
+                        window.print();
+                        document.getElementById('invoice-print-area').classList.add('hidden');
+                    }, 200);
+                },
+
+                exportToExcel() {
+                    const data = this.filteredStudents.map(s => ({ 
+                        'Nom': s.last_name, 
+                        'Prénom': s.first_name, 
+                        'Sexe': s.sex, 
+                        'École': s.school_name,
+                        'Date d\'inscription': this.formatDate(s.created_at),
+                        'Prix/Élève': s.price_per_student
+                    }));
+                    const ws = XLSX.utils.json_to_sheet(data);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "Élèves");
+                    XLSX.writeFile(wb, "eleves.xlsx");
+                    this.showMessage("Export Excel réussi.", "success");
+                },
+
+                exportSchoolsToExcel() {
+                    const data = this.schools.map(s => ({ 
+                        'Nom': s.name, 
+                        'Code': s.access_code, 
+                        'Matricule': s.matricule,
+                        'Date de création': this.formatDate(s.created_at),
+                        'Élèves': s.student_count, 
+                        'Prix/Élève': s.price_per_student, 
+                        'Montant Total': (s.student_count * s.price_per_student).toFixed(2), 
+                        'Statut': s.is_active ? 'Actif' : 'En attente' 
+                    }));
+                    const ws = XLSX.utils.json_to_sheet(data);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "Écoles");
+                    XLSX.writeFile(wb, "ecoles.xlsx");
+                    this.showMessage("Export Excel réussi.", "success");
+                },
+
+                async addAdmin() {
+                    this.isLoading = true;
+                    const passwordHash = CryptoJS.SHA256(this.newAdmin.password).toString();
+                    const { error } = await supabaseClient.from('admins').insert([{ username: this.newAdmin.username, password_hash: passwordHash }]);
+                    if (error) {
+                        this.showMessage("Erreur ajout admin.", "error");
+                        this.isLoading = false;
+                        return;
+                    }
+                    this.showMessage("Administrateur ajouté.", "success");
+                    this.showAddAdminModal = false;
+                    this.newAdmin = { username: "", password: "" };
+                    this.isLoading = false;
+                },
+
+                logout() {
+                    localStorage.removeItem("admin");
+                    window.location.reload();
+                },
+
+                showMessage(text, type) {
+                    this.message = { text, type };
+                    setTimeout(() => { this.message = { text: "", type: "info" }; }, 3000);
+                },
+
+                formatDate(dateString) {
+                    if (!dateString) return '';
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('fr-FR');
+                },
+
+                get filteredSchools() {
+                    return this.schools.filter(s => !this.filters.schoolName || s.name.toLowerCase().includes(this.filters.schoolName.toLowerCase()));
+                },
+
+                get filteredStudents() {
+                    return this.allStudents.filter(student => {
+                        const matchesName = !this.filters.studentName || student.last_name.toLowerCase().includes(this.filters.studentName.toLowerCase()) || student.first_name.toLowerCase().includes(this.filters.studentName.toLowerCase());
+                        const matchesSchool = !this.filters.schoolId || student.school_id === this.filters.schoolId;
+                        const matchesSex = !this.filters.sex || student.sex === this.filters.sex;
+                        return matchesName && matchesSchool && matchesSex;
+                    });
+                }
+            };
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Connexion Administrateur</title>
+        <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+        <link
+            href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css"
+            rel="stylesheet"
+            type="text/css"
+        />
+         <script src="./style/scripts/style.js"></script>
+        <script
+            defer
+            src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+        ></script>
+        <script src="https://unpkg.com/@supabase/supabase-js"></script>
+        <!-- Bibliothèque pour hasher le mot de passe (SHA-256) -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    </head>
+    <body class="bg-base-200 min-h-screen flex items-center justify-center p-4">
+        <div
+            x-data="loginApp()"
+            class="card w-full max-w-md bg-base-100 shadow-2xl"
+        >
+            <div class="card-body">
+                <div class="text-center mb-6">
+                    <h1 class="text-3xl font-bold">Inspection Éducation</h1>
+                    <p class="text-base-content/70">Connexion Administrateur</p>
+                </div>
+
+                <form @submit.prevent="handleLogin" class="space-y-4">
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Nom d'utilisateur</span>
+                        </label>
+                        <input
+                            type="text"
+                            x-model="credentials.username"
+                            required
+                            class="input input-bordered w-full"
+                        />
+                    </div>
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Mot de passe</span>
+                        </label>
+                        <input
+                            type="password"
+                            x-model="credentials.password"
+                            required
+                            class="input input-bordered w-full"
+                        />
+                    </div>
+                    <div class="card-actions mt-6">
+                        <button
+                            type="submit"
+                            class="btn btn-primary w-full"
+                            :disabled="isLoading"
+                        >
+                            <span x-show="!isLoading">Se connecter</span>
+                            <span
+                                x-show="isLoading"
+                                class="loading loading-spinner"
+                            ></span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Message d'alerte -->
+                <div
+                    x-show="message.text"
+                    x-transition
+                    :class="`alert alert-${message.type} mt-4`"
+                    x-text="message.text"
+                ></div>
+            </div>
+        </div>
+
+        <script>
+            const { createClient } = supabase;
+            const supabaseUrl = "https://kgeerjuindhoueyzfemk.supabase.co";
+            const supabaseKey =
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnZWVyanVpbmRob3VleXpmZW1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE0MzUyNTIsImV4cCI6MjA3NzAxMTI1Mn0.VOkXxOPL53o49FGZTQ1jP9jm_9rXhu30toRac-codjs";
+            const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+            function loginApp() {
+                return {
+                    credentials: { username: "", password: "" },
+                    isLoading: false,
+                    message: { text: "", type: "info" },
+
+                    async handleLogin() {
+                        this.isLoading = true;
+                        this.message = { text: "", type: "info" };
+
+                        // Hasher le mot de passe avec SHA-256 avant de l'envoyer
+                        const passwordHash = CryptoJS.SHA256(
+                            this.credentials.password,
+                        ).toString();
+
+                        const { data, error } = await supabaseClient
+                            .from("admins")
+                            .select("id, username")
+                            .eq("username", this.credentials.username)
+                            .eq("password_hash", passwordHash)
+                            .single();
+
+                        if (error || !data) {
+                            this.message = {
+                                text: "Nom d'utilisateur ou mot de passe incorrect.",
+                                type: "error",
+                            };
+                        } else {
+                            // Stocker les infos de l'admin dans le localStorage
+                            localStorage.setItem("admin", JSON.stringify(data));
+                            // Rediriger vers le tableau de bord
+                            window.location.href = "admin.html";
+                        }
+                        this.isLoading = false;
+                    },
+                };
+            }
+        </script>
+    </body>
+</html>
