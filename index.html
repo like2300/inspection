@@ -1,547 +1,1084 @@
 <!doctype html>
 <html lang="fr">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Portail École - Inspection de l'Éducation</title>
-        <!-- CDN Tailwind CSS et DaisyUI -->
-        <!--<script src="https://cdn.tailwindcss.com"></script>-->
-        <script src="./style/scripts/style.js"></script>
-        <link
-            href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css"
-            rel="stylesheet"
-            type="text/css"
-        />
-        <!-- CDN Alpine.js -->
-        <script
-            defer
-            src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
-        ></script>
-        <!-- CDN Supabase -->
-        <script src="https://unpkg.com/@supabase/supabase-js"></script>
-        <!-- CDN pour l'export Excel -->
-        <script
-            defer
-            src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
-        ></script>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#0078d4" />
+    <title>Portail École</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
 
-        <style>
-            /* Style pour l'impression : cache tout sauf la liste des élèves */
-            @media print {
-                body * {
-                    visibility: hidden;
-                }
-                #print-area,
-                #print-area * {
-                    visibility: visible;
-                }
-                #print-area {
-                    position: absolute;
-                    left: 0;
-                    top: 0;
-                    width: 100%;
-                }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Desktop Windows 11 Style */
+        @media (min-width: 1025px) {
+            .app-container {
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                background: #f3f3f3;
+                border: 1px solid #d0d0d0;
+                border-radius: 4px;
+                box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.08);
+                max-width: 1200px;
+                margin: 8px auto;
             }
-        </style>
-    </head>
-    <body
-        class="bg-base-200 min-h-screen flex flex-col"
-        x-data="schoolApp()"
-        x-init="checkUrlCode()"
-    >
-        <!-- Header (visible après connexion) -->
-        <header x-show="school" class="navbar bg-base-100 shadow-sm border-b">
-            <div class="flex-1">
-                <p class="text-lg font-bold" x-text="school.name"></p>
+
+            .titlebar {
+                background: linear-gradient(to bottom, #e8e8e8, #d4d4d4);
+                border-bottom: 1px solid #b0b0b0;
+                padding: 4px;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                height: 32px;
+                flex-shrink: 0;
+            }
+
+            .titlebar-icon {
+                width: 24px;
+                height: 24px;
+                padding: 2px;
+                color: #000;
+            }
+
+            .titlebar-text {
+                flex: 1;
+                font-size: 13px;
+                font-weight: 500;
+                color: #000;
+                text-align: center;
+                user-select: none;
+            }
+
+            .window-button {
+                width: 36px;
+                height: 28px;
+                border: 1px solid transparent;
+                background: 0;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #000;
+                font-size: 16px;
+                transition: all 0.1s;
+            }
+
+            .window-button:hover:not(.close) {
+                background: #e8e8e8;
+                border: 1px solid #d0d0d0;
+            }
+
+            .window-button.close:hover {
+                background: #e81123;
+                color: white;
+            }
+
+            .content-wrapper {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                background: white;
+            }
+        }
+
+        /* Mobile Style */
+        @media (max-width: 1024px) {
+            .app-container {
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                background: white;
+            }
+
+            .titlebar {
+                display: none;
+            }
+
+            .content-wrapper {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+
+            .header-info {
+                padding: 12px 16px !important;
+                gap: 8px !important;
+            }
+
+            .header-info h1 {
+                font-size: 18px !important;
+            }
+
+            .header-info p {
+                font-size: 11px !important;
+            }
+
+            .sync-indicator {
+                font-size: 11px !important;
+                padding: 3px 6px !important;
+            }
+
+            .win-button-primary {
+                padding: 10px 12px !important;
+                font-size: 14px !important;
+            }
+
+            .win-input {
+                padding: 10px 8px !important;
+                font-size: 14px !important;
+            }
+
+            table {
+                font-size: 12px !important;
+            }
+
+            .px-4 {
+                padding-left: 8px !important;
+                padding-right: 8px !important;
+            }
+
+            .py-3 {
+                padding-top: 8px !important;
+                padding-bottom: 8px !important;
+            }
+
+            .grid-cols-3 {
+                grid-template-columns: 1fr 1fr 1fr !important;
+                gap: 8px !important;
+            }
+
+            .p-6 {
+                padding: 12px !important;
+            }
+
+            .p-4 {
+                padding: 12px !important;
+            }
+
+            .space-y-6 > * + * {
+                margin-top: 16px !important;
+            }
+
+            .md\:grid-cols-4 {
+                grid-template-columns: 1fr 1fr !important;
+                gap: 8px !important;
+            }
+        }
+
+        /* Responsive buttons */
+        .win-button {
+            background: #e8e8e8;
+            border: 1px solid #d0d0d0;
+            padding: 8px 16px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: #000;
+            transition: all 0.1s;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+
+        .win-button:hover {
+            background: #d8d8d8;
+            border-color: #b0b0b0;
+        }
+
+        .win-button:active {
+            background: #c8c8c8;
+        }
+
+        .win-button-primary {
+            background: linear-gradient(to bottom, #0078d4, #005a9e);
+            color: white;
+            border: 1px solid #094db8;
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        .win-button-primary:hover {
+            background: linear-gradient(to bottom, #1084d7, #0063b1);
+        }
+
+        .win-input {
+            background: #fff;
+            border: 1px solid #d0d0d0;
+            padding: 8px 10px;
+            border-radius: 2px;
+            font-size: 13px;
+            transition: all 0.1s;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .win-input:focus {
+            outline: none;
+            border-color: #0078d4;
+            box-shadow: 0 0 0 1px rgba(0, 120, 212, 0.5);
+        }
+
+        .sync-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: #f0f0f0;
+            border-radius: 2px;
+            font-size: 12px;
+            color: #666;
+            flex-wrap: wrap;
+        }
+
+        .sync-indicator.syncing {
+            background: #e8f4f8;
+            color: #0078d4;
+        }
+
+        .sync-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #666;
+            flex-shrink: 0;
+        }
+
+        .sync-dot.active {
+            background: #0078d4;
+            animation: pulse 1s infinite;
+        }
+
+        /* Draggable window */
+        .draggable-header {
+            cursor: move;
+            user-select: none;
+        }
+
+        .app-container.dragging {
+            opacity: 0.9;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 2px;
+        }
+
+        .window-btn {
+            width: 36px;
+            height: 28px;
+            border: 1px solid transparent;
+            background: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-size: 16px;
+            transition: all 0.1s;
+            border-radius: 2px;
+        }
+
+        .window-btn:hover {
+            background: #e8e8e8;
+            border: 1px solid #d0d0d0;
+        }
+
+        .window-btn.minimize:hover {
+            background: #e0e0e0;
+        }
+
+        .window-btn.maximize:hover {
+            background: #e0e0e0;
+        }
+
+        .window-btn.close:hover {
+            background: #e81123;
+            color: white;
+        }
+
+        .message-box {
+            font-size: 13px;
+            padding: 12px;
+            border-radius: 2px;
+            margin-top: 12px;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body x-data="schoolApp()" x-init="initApp()">
+    <div class="app-container" :style="isMinimized ? 'height: 32px; max-height: 32px;' : ''">
+        <!-- Barre de titre Windows (Desktop seulement) -->
+        <div class="titlebar draggable-header" @mousedown="startDrag">
+            <div class="titlebar-icon">
+                <svg fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19 21V5c0-1.1-.9-2-2-2H7c-1.1 0-2 .9-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
             </div>
-            <div class="flex-none gap-2">
-                <span
-                    class="badge badge-ghost badge-sm"
-                    x-text="`Code: ${school.access_code}`"
-                ></span>
-                <button @click="logout()" class="btn btn-ghost btn-sm">
-                    Déconnexion
+            <div class="titlebar-text">Portail École - Inspection de l'Éducation</div>
+            <div class="window-controls">
+                <button @click="isMinimized = !isMinimized" class="window-btn minimize" title="Réduire">
+                    <span>_</span>
+                </button>
+                <button @click="isMaximized = !isMaximized" class="window-btn maximize" title="Agrandir">
+                    <span x-text="isMaximized ? '❐' : '☐'"></span>
+                </button>
+                <button @click="logout()" class="window-btn close" title="Fermer">
+                    <span>✕</span>
                 </button>
             </div>
-        </header>
+        </div>
 
-        <main class="flex-grow p-4">
-            <!-- Vue de Connexion -->
-            <div
-                x-show="!school"
-                class="flex items-center justify-center min-h-full"
-            >
-                <div class="card w-full max-w-sm bg-base-100 shadow-xl">
-                    <div class="card-body">
-                        <h2
-                            class="card-title text-2xl font-bold text-center justify-center"
-                        >
-                            Portail École
-                        </h2>
-                        <form @submit.prevent="login()" class="space-y-4">
-                            <div class="form-control">
-                                <label class="label"
-                                    ><span class="label-text"
-                                        >Code d'accès</span
-                                    ></label
-                                >
-                                <input
-                                    type="text"
-                                    x-model="loginCode"
-                                    @keyup.enter="login()"
-                                    placeholder="Ex: ABC123"
-                                    class="input input-bordered"
-                                    required
-                                />
-                            </div>
-                            <button
-                                type="submit"
-                                class="btn btn-primary w-full"
-                                :disabled="isLoading"
-                            >
-                                <span x-show="!isLoading">Se connecter</span>
-                                <span
-                                    x-show="isLoading"
-                                    class="loading loading-spinner"
-                                ></span>
-                            </button>
-                        </form>
-                        <!-- Message d'alerte -->
-                        <div
-                            x-show="message.text"
-                            x-transition
-                            :class="`alert alert-${message.type} mt-4`"
-                            x-text="message.text"
-                        ></div>
+        <!-- Contenu principal -->
+        <div class="content-wrapper">
+            <!-- En-tête avec info école (après connexion) -->
+            <div x-show="school" class="border-b border-gray-300 bg-gray-50 flex-shrink-0">
+                <div class="flex items-center justify-between header-info p-4 gap-4">
+                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold flex-shrink-0">
+                            <span x-text="school.name.charAt(0)"></span>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <h1 class="text-base md:text-lg font-bold text-gray-900 truncate" x-text="school.name"></h1>
+                            <p class="text-xs text-gray-600 truncate" x-text="`${school.access_code} • ${school.matricule}`"></p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0">
+                        <div :class="`sync-indicator ${isSyncing ? 'syncing' : ''} ${!isOnline ? 'bg-red-100' : ''}`">
+                            <div class="sync-dot" :class="{ active: isSyncing }"></div>
+                            <span x-text="isSyncing ? '⟳' : isOnline ? '✓' : '✕'" class="hidden md:inline"></span>
+                        </div>
+                        <button @click="logout()" class="win-button text-xs md:text-sm px-2 md:px-4">Déco</button>
                     </div>
                 </div>
             </div>
 
-            <!-- Vue du Tableau de Bord de l'École -->
-            <div
-                x-show="school"
-                class="space-y-4 max-w-4xl mx-auto"
-                id="print-area"
-            >
-                <!-- Cartes de Statistiques -->
-                <div class="grid grid-cols-3 gap-2 stats shadow bg-base-100">
-                    <div class="stat place-items-center">
-                        <div class="stat-title">Limite</div>
-                        <div
-                            class="stat-value text-lg"
-                            x-text="school.student_limit"
-                        ></div>
+            <!-- Vue de connexion -->
+            <div x-show="!school" class="flex-1 flex items-center justify-center p-4 overflow-y-auto">
+                <div class="bg-white border border-gray-300 rounded p-6 w-full max-w-sm">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Portail École</h2>
+                        <p class="text-gray-600 text-sm">Accédez à votre espace</p>
                     </div>
-                    <div class="stat place-items-center">
-                        <div class="stat-title">Enregistrés</div>
-                        <div
-                            class="stat-value text-lg text-secondary"
-                            x-text="students.length"
-                        ></div>
-                    </div>
-                    <div class="stat place-items-center">
-                        <div class="stat-title">Restants</div>
-                        <div
-                            class="stat-value text-lg text-primary"
-                            x-text="school.student_limit - students.length"
-                        ></div>
+                    <form @submit.prevent="login()" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Code d'accès</label>
+                            <input 
+                                type="text" 
+                                x-model="loginCode" 
+                                @keyup.enter="login()"
+                                placeholder="ABC123" 
+                                class="win-input" 
+                                required 
+                                autofocus
+                            />
+                        </div>
+                        <button 
+                            type="submit" 
+                            class="win-button-primary w-full"
+                            :disabled="isLoading"
+                        >
+                            <span x-show="!isLoading">Se connecter</span>
+                            <span x-show="isLoading">Connexion...</span>
+                        </button>
+                    </form>
+                    <div x-show="message.text" :class="`message-box ${message.type === 'error' ? 'bg-red-50 border border-red-300 text-red-800' : 'bg-green-50 border border-green-300 text-green-800'}`" x-text="message.text"></div>
+                    <div class="mt-6 p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+                        💾 Données locales + Sync auto
                     </div>
                 </div>
+            </div>
 
-                <!-- Formulaire d'Ajout/Modification d'Élève -->
-                <div class="card bg-base-100 shadow-lg">
-                    <div class="card-body">
-                        <h3
-                            class="card-title"
-                            x-text="editingStudent ? 'Modifier un élève' : 'Ajouter un élève'"
-                        ></h3>
-                        <form
-                            @submit.prevent="saveStudent()"
-                            class="grid grid-cols-1 md:grid-cols-4 gap-2"
-                        >
-                            <input
-                                type="text"
-                                x-model="newStudent.last_name"
-                                placeholder="Nom"
-                                required
-                                class="input input-bordered input-sm"
-                            />
-                            <input
-                                type="text"
-                                x-model="newStudent.first_name"
-                                placeholder="Prénom"
-                                required
-                                class="input input-bordered input-sm"
-                            />
-                            <select
-                                x-model="newStudent.sex"
-                                class="select select-bordered select-sm"
-                            >
-                                <option value="M">Masculin</option>
-                                <option value="F">Féminin</option>
-                            </select>
-                            <button
-                                type="submit"
-                                class="btn btn-primary btn-sm"
-                                :disabled="isLoading || students.length >= school.student_limit"
-                            >
-                                <span
-                                    x-show="!isLoading"
-                                    x-text="editingStudent ? 'Mettre à jour' : 'Ajouter'"
-                                ></span>
-                                <span
-                                    x-show="isLoading"
-                                    class="loading loading-spinner"
-                                ></span>
-                            </button>
-                        </form>
-                        <div x-show="editingStudent" class="mt-2">
-                            <button
-                                @click="cancelEdit()"
-                                class="btn btn-xs btn-ghost"
-                            >
-                                Annuler la modification
-                            </button>
+            <!-- Tableau de bord de l'école -->
+            <div x-show="school" class="flex-1 overflow-y-auto" id="print-area">
+                <div class="p-4 md:p-6 space-y-4 md:space-y-6">
+                    <!-- Statistiques -->
+                    <div class="grid grid-cols-3 gap-2 md:gap-4">
+                        <div class="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 p-3 md:p-4 rounded-lg">
+                            <p class="text-xs md:text-sm font-medium text-gray-700">Limite</p>
+                            <p class="text-2xl md:text-3xl font-bold text-blue-700 mt-1" x-text="school.student_limit"></p>
                         </div>
-                        <div
-                            x-show="students.length >= school.student_limit && !editingStudent"
-                            class="alert alert-warning mt-2 text-sm"
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="stroke-current shrink-0 h-4 w-4"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        <div class="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 p-3 md:p-4 rounded-lg">
+                            <p class="text-xs md:text-sm font-medium text-gray-700">Enregistrés</p>
+                            <p class="text-2xl md:text-3xl font-bold text-green-700 mt-1" x-text="students.length"></p>
+                        </div>
+                        <div class="bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 p-3 md:p-4 rounded-lg">
+                            <p class="text-xs md:text-sm font-medium text-gray-700">Restants</p>
+                            <p class="text-2xl md:text-3xl font-bold text-amber-700 mt-1" x-text="school.student_limit - students.length"></p>
+                        </div>
+                    </div>
+
+                    <!-- Formulaire d'ajout/modification -->
+                    <div class="bg-gray-50 border border-gray-300 p-3 md:p-4 rounded-lg">
+                        <h3 class="font-bold text-sm md:text-base text-gray-900 mb-3" x-text="editingStudent ? 'Modifier un élève' : 'Ajouter un nouvel élève'"></h3>
+                        <form @submit.prevent="saveStudent()" class="grid gap-2 md:gap-3">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-3">
+                                <input 
+                                    type="text" 
+                                    x-model="newStudent.last_name" 
+                                    placeholder="Nom" 
+                                    required 
+                                    class="win-input"
                                 />
-                            </svg>
-                            <span
-                                >Vous avez atteint la limite d'élèves
-                                autorisée.</span
-                            >
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Liste des Élèves -->
-                <div class="card bg-base-100 shadow-lg">
-                    <div class="card-body">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-semibold">
-                                Liste des élèves
-                            </h3>
-                            <div class="flex gap-2">
-                                <button
-                                    @click="exportToExcel()"
-                                    class="btn btn-info btn-sm"
-                                    :disabled="students.length === 0"
+                                <input 
+                                    type="text" 
+                                    x-model="newStudent.first_name" 
+                                    placeholder="Prénom" 
+                                    required 
+                                    class="win-input"
+                                />
+                                <select x-model="newStudent.sex" class="win-input">
+                                    <option value="M">Masculin</option>
+                                    <option value="F">Féminin</option>
+                                </select>
+                                <button 
+                                    type="submit" 
+                                    class="win-button-primary"
+                                    :disabled="isLoading || (school && students.length >= school.student_limit && !editingStudent)"
                                 >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="h-4 w-4"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                        />
-                                    </svg>
-                                    Exporter Excel
+                                    <span x-show="!isLoading" x-text="editingStudent ? '↪ MAJ' : '➕ Ajouter'"></span>
+                                    <span x-show="isLoading">...</span>
                                 </button>
-                                <!--<button
-                                    @click="printList()"
-                                    class="btn btn-success btn-sm"
-                                    :disabled="students.length === 0"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="h-4 w-4"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-                                        />
-                                    </svg>
-                                    Imprimer
-                                </button>-->
+                            </div>
+                            <template x-if="editingStudent">
+                                <button type="button" @click="cancelEdit()" class="win-button text-xs">✕ Annuler modification</button>
+                            </template>
+                            <template x-if="students.length >= school.student_limit && !editingStudent">
+                                <div class="p-2 bg-amber-50 border border-amber-300 rounded text-xs text-amber-800">
+                                    ⚠️ Limite d'élèves atteinte
+                                </div>
+                            </template>
+                        </form>
+                    </div>
+
+                    <!-- Liste des élèves -->
+                    <div class="bg-white border border-gray-300 rounded-lg overflow-hidden flex flex-col">
+                        <div class="border-b border-gray-300 p-3 md:p-4 bg-gray-50 flex justify-between items-center gap-2 flex-shrink-0">
+                            <h3 class="font-bold text-sm md:text-base text-gray-900">Élèves (<span x-text="students.length"></span>)</h3>
+                            <div class="flex gap-2 items-center">
+                                <button @click="showFilters = !showFilters" class="win-button text-xs md:text-sm px-2 md:px-4" style="background: #0078d4; color: white; border: 1px solid #005a9e;">
+                                    <span x-text="showFilters ? '🔍 Fermer' : '⚙️ Filtres'"></span>
+                                </button>
+                                <button @click="exportToExcel()" class="win-button text-xs md:text-sm px-2 md:px-4" :disabled="students.length === 0">
+                                    📊 Excel
+                                </button>
                             </div>
                         </div>
-                        <div class="overflow-x-auto">
-                            <table class="table table-sm">
-                                <thead>
+
+                        <!-- Barre de recherche et filtres VISIBLE -->
+                        <div x-show="showFilters" x-transition class="border-b border-gray-300 bg-blue-50 p-4 space-y-3 flex-shrink-0">
+                            <div>
+                                <label class="block text-xs md:text-sm font-medium text-gray-700 mb-2">🔍 Rechercher</label>
+                                <input 
+                                    type="text" 
+                                    x-model="searchText" 
+                                    placeholder="Nom ou prénom..." 
+                                    class="win-input text-xs md:text-sm"
+                                />
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">👥 Sexe</label>
+                                    <select x-model="filterSex" class="win-input text-xs md:text-sm">
+                                        <option value="">Tous</option>
+                                        <option value="M">Masculin</option>
+                                        <option value="F">Féminin</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">🔤 Tri</label>
+                                    <select x-model="sortBy" class="win-input text-xs md:text-sm">
+                                        <option value="nom">Nom ↑</option>
+                                        <option value="nom-desc">Nom ↓</option>
+                                        <option value="date">Récent</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">&nbsp;</label>
+                                    <button @click="resetFilters()" class="win-button w-full text-xs md:text-sm" style="color: #0078d4;">
+                                        ↻ Réinitialiser
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="text-xs text-gray-700 bg-white p-2 rounded border border-blue-200">
+                                <strong>📊 Résultats:</strong> <span x-text="`${filteredStudents.length} / ${students.length}`"></span>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto flex-1">
+                            <table class="w-full text-xs md:text-sm">
+                                <thead class="bg-gray-100 border-b border-gray-300 sticky top-0">
                                     <tr>
-                                        <th>#</th>
-                                        <th>Nom</th>
-                                        <th>Prénom</th>
-                                        <th>Sexe</th>
-                                        <th>Actions</th>
+                                        <th class="px-2 md:px-4 py-2 md:py-3 text-left font-bold text-gray-900">#</th>
+                                        <th class="px-2 md:px-4 py-2 md:py-3 text-left font-bold text-gray-900">Nom</th>
+                                        <th class="px-2 md:px-4 py-2 md:py-3 text-left font-bold text-gray-900">Prénom</th>
+                                        <th class="px-2 md:px-4 py-2 md:py-3 text-left font-bold text-gray-900 hidden sm:table-cell">Sexe</th>
+                                        <th class="px-2 md:px-4 py-2 md:py-3 text-left font-bold text-gray-900">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <template
-                                        x-for="(student, index) in students"
-                                        :key="student.id"
-                                    >
-                                        <tr>
-                                            <td x-text="index + 1"></td>
-                                            <td x-text="student.last_name"></td>
-                                            <td
-                                                x-text="student.first_name"
-                                            ></td>
-                                            <td x-text="student.sex"></td>
-                                            <td>
-                                                <div class="flex gap-1">
-                                                    <button
-                                                        @click="editStudent(student)"
-                                                        class="btn btn-xs btn-ghost"
-                                                    >
-                                                        ✏️
-                                                    </button>
-                                                    <button
-                                                        @click="deleteStudent(student.id)"
-                                                        class="btn btn-xs btn-ghost text-error"
-                                                    >
-                                                        🗑️
-                                                    </button>
-                                                </div>
+                                <tbody class="divide-y divide-gray-200">
+                                    <template x-for="(student, index) in filteredStudents" :key="student.id">
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-2 md:px-4 py-2 md:py-3 text-gray-700" x-text="index + 1"></td>
+                                            <td class="px-2 md:px-4 py-2 md:py-3 text-gray-900 font-medium" x-text="student.last_name"></td>
+                                            <td class="px-2 md:px-4 py-2 md:py-3 text-gray-700" x-text="student.first_name"></td>
+                                            <td class="px-2 md:px-4 py-2 md:py-3 text-gray-700 hidden sm:table-cell" x-text="student.sex === 'M' ? '👨 M' : '👩 F'"></td>
+                                            <td class="px-2 md:px-4 py-2 md:py-3 flex gap-1">
+                                                <button @click="editStudent(student)" class="win-button text-xs px-1 md:px-2">✏️</button>
+                                                <button @click="deleteStudent(student.id)" class="win-button text-xs px-1 md:px-2" style="color: #c50f1f;">🗑️</button>
                                             </td>
                                         </tr>
                                     </template>
                                 </tbody>
                             </table>
-                            <div
-                                x-show="students.length === 0"
-                                class="text-center p-8 text-base-content/50"
-                            >
-                                Aucun élève enregistré pour le moment.
-                            </div>
                         </div>
+
+                        <!-- Messages vides -->
+                        <template x-if="students.length === 0">
+                            <div class="p-8 text-center text-gray-500 text-sm flex-1 flex items-center justify-center">
+                                Aucun élève
+                            </div>
+                        </template>
+                        <template x-if="students.length > 0 && filteredStudents.length === 0">
+                            <div class="p-8 text-center text-gray-500 text-sm flex-1 flex items-center justify-center">
+                                ❌ Aucun résultat pour votre recherche
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
-        </main>
+        </div>
+    </div>
 
-        <script>
-            const { createClient } = supabase;
-            const supabaseUrl = "https://kgeerjuindhoueyzfemk.supabase.co";
-            const supabaseKey =
-                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnZWVyanVpbmRob3VleXpmZW1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE0MzUyNTIsImV4cCI6MjA3NzAxMTI1Mn0.VOkXxOPL53o49FGZTQ1jP9jm_9rXhu30toRac-codjs";
-            const supabaseClient = createClient(supabaseUrl, supabaseKey);
+    <!-- POP-UP FILTRES -->
+    <div x-show="showFilters" x-transition class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full" @click.away="showFilters = false">
+            <!-- En-tête -->
+            <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-4 flex justify-between items-center text-white rounded-t-lg">
+                <h2 class="font-bold text-lg">🔍 Filtres & Recherche</h2>
+                <button @click="showFilters = false" class="text-white hover:bg-blue-700 p-1 rounded">✕</button>
+            </div>
 
-            function schoolApp() {
-                return {
-                    // --- État de l'application ---
-                    loginCode: "",
-                    school: null,
-                    students: [],
-                    newStudent: { first_name: "", last_name: "", sex: "M" },
-                    editingStudent: null, // Stocke l'élève en cours de modification
-                    isLoading: false,
-                    message: { text: "", type: "info" },
+            <!-- Contenu -->
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">📝 Rechercher</label>
+                    <input 
+                        type="text" 
+                        x-model="searchText" 
+                        placeholder="Nom ou prénom..." 
+                        class="win-input w-full"
+                        autofocus
+                    />
+                </div>
 
-                    // --- Méthodes ---
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">👥 Filtrer par sexe</label>
+                    <select x-model="filterSex" class="win-input w-full">
+                        <option value="">Tous les sexes</option>
+                        <option value="M">👨 Masculin</option>
+                        <option value="F">👩 Féminin</option>
+                    </select>
+                </div>
 
-                    // Vérifie si un code est présent dans l'URL (pour le QR Code)
-                    checkUrlCode() {
-                        const urlParams = new URLSearchParams(
-                            window.location.search,
-                        );
-                        const codeFromUrl = urlParams.get("code");
-                        if (codeFromUrl) {
-                            this.loginCode = codeFromUrl.toUpperCase();
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">🔤 Trier par</label>
+                    <select x-model="sortBy" class="win-input w-full">
+                        <option value="nom">📤 Nom (A → Z)</option>
+                        <option value="nom-desc">📥 Nom (Z → A)</option>
+                        <option value="date">🕐 Plus récent</option>
+                    </select>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded p-3">
+                    <p class="text-sm font-bold text-gray-800">
+                        📊 <span x-text="`${filteredStudents.length} résultat(s) sur ${students.length}`"></span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Boutons -->
+            <div class="bg-gray-50 p-4 border-t border-gray-200 rounded-b-lg flex gap-2">
+                <button @click="resetFilters()" class="flex-1 win-button bg-gray-200 font-bold">
+                    ↻ Réinitialiser
+                </button>
+                <button @click="showFilters = false" class="flex-1 win-button-primary font-bold">
+                    ✓ Appliquer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- POP-UP MODIFICATION ÉLÈVE -->
+    <div x-show="showEditModal" x-transition class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full" @click.away="showEditModal = false">
+            <!-- En-tête -->
+            <div class="bg-gradient-to-r from-green-500 to-green-600 p-4 flex justify-between items-center text-white rounded-t-lg">
+                <h2 class="font-bold text-lg">✏️ Modifier l'élève</h2>
+                <button @click="showEditModal = false" class="text-white hover:bg-green-700 p-1 rounded">✕</button>
+            </div>
+
+            <!-- Contenu -->
+            <form @submit.prevent="saveStudent()" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Nom</label>
+                    <input 
+                        type="text" 
+                        x-model="newStudent.last_name" 
+                        placeholder="Nom complet" 
+                        required 
+                        class="win-input w-full"
+                        autofocus
+                    />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Prénom</label>
+                    <input 
+                        type="text" 
+                        x-model="newStudent.first_name" 
+                        placeholder="Prénom" 
+                        required 
+                        class="win-input w-full"
+                    />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Sexe</label>
+                    <select x-model="newStudent.sex" class="win-input w-full">
+                        <option value="M">👨 Masculin</option>
+                        <option value="F">👩 Féminin</option>
+                    </select>
+                </div>
+
+                <div class="bg-gray-50 p-3 rounded border border-gray-200">
+                    <p class="text-xs text-gray-600">Cette modification sera synchronisée avec le serveur</p>
+                </div>
+
+                <!-- Boutons -->
+                <div class="flex gap-2 pt-4">
+                    <button type="button" @click="showEditModal = false" class="flex-1 win-button font-bold">
+                        ✕ Annuler
+                    </button>
+                    <button type="submit" class="flex-1 win-button-primary font-bold" :disabled="isLoading">
+                        <span x-show="!isLoading">✓ Sauvegarder</span>
+                        <span x-show="isLoading">⏳ Sauvegarde...</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const { createClient } = supabase;
+        const supabaseUrl = "https://kgeerjuindhoueyzfemk.supabase.co";
+        const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnZWVyanVpbmRob3VleXpmZW1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE0MzUyNTIsImV4cCI6MjA3NzAxMTI1Mn0.VOkXxOPL53o49FGZTQ1jP9jm_9rXhu30toRac-codjs";
+        const supabaseClient = createClient(supabaseUrl, supabaseKey);
+        const DB_NAME = "SchoolPortalDB";
+        const STORE_NAME = "students";
+
+        function schoolApp() {
+            return {
+                loginCode: "",
+                school: null,
+                students: [],
+                newStudent: { first_name: "", last_name: "", sex: "M" },
+                editingStudent: null,
+                isLoading: false,
+                isSyncing: false,
+                lastSync: "Jamais",
+                message: { text: "", type: "info" },
+                isMinimized: false,
+                isMaximized: false,
+                db: null,
+                isOnline: navigator.onLine,
+                isDragging: false,
+                dragStart: { x: 0, y: 0 },
+                windowStart: { x: 0, y: 0 },
+
+                // Recherche et filtrage
+                searchText: "",
+                filterSex: "",
+                sortBy: "nom",
+                showFilters: false,
+                showEditModal: false,
+
+                async initApp() {
+                    console.log("Initialisation...");
+                    await this.initIndexedDB();
+                    this.checkOnlineStatus();
+                    window.addEventListener('online', () => this.handleOnline());
+                    window.addEventListener('offline', () => this.handleOffline());
+                    
+                    // Support du drag & drop de fenêtre (Desktop uniquement)
+                    if (window.innerWidth > 1024) {
+                        document.addEventListener('mousemove', (e) => this.handleDrag(e));
+                        document.addEventListener('mouseup', () => this.stopDrag());
+                    }
+                    
+                    await this.restoreSession();
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const codeFromUrl = urlParams.get("code");
+                    if (codeFromUrl) {
+                        this.loginCode = codeFromUrl.toUpperCase();
+                        await this.login();
+                    }
+                    setInterval(() => this.autoSync(), 30000);
+                },
+
+                startDrag(e) {
+                    if (window.innerWidth <= 1024) return;
+                    this.isDragging = true;
+                    this.dragStart = { x: e.clientX, y: e.clientY };
+                    const container = document.querySelector('.app-container');
+                    const rect = container.getBoundingClientRect();
+                    this.windowStart = { x: rect.left, y: rect.top };
+                    container.classList.add('dragging');
+                },
+
+                handleDrag(e) {
+                    if (!this.isDragging || window.innerWidth <= 1024) return;
+                    const dx = e.clientX - this.dragStart.x;
+                    const dy = e.clientY - this.dragStart.y;
+                    const container = document.querySelector('.app-container');
+                    container.style.position = 'fixed';
+                    container.style.left = (this.windowStart.x + dx) + 'px';
+                    container.style.top = (this.windowStart.y + dy) + 'px';
+                    container.style.margin = '0';
+                    container.style.maxWidth = '1200px';
+                    container.style.zIndex = '1000';
+                },
+
+                stopDrag() {
+                    if (!this.isDragging) return;
+                    this.isDragging = false;
+                    const container = document.querySelector('.app-container');
+                    container.classList.remove('dragging');
+                },
+
+                checkOnlineStatus() {
+                    this.isOnline = navigator.onLine;
+                    console.log("Connexion:", this.isOnline ? "En ligne" : "Hors ligne");
+                },
+
+                handleOnline() {
+                    this.isOnline = true;
+                    this.showMessage("✅ En ligne - Synchronisation...", "success");
+                    if (this.school) this.syncStudents();
+                },
+
+                handleOffline() {
+                    this.isOnline = false;
+                    this.showMessage("⚠️ Hors ligne", "warning");
+                },
+
+                saveSession() {
+                    if (this.school) {
+                        const session = {
+                            school: {
+                                id: this.school.id,
+                                name: this.school.name,
+                                access_code: this.school.access_code,
+                                matricule: this.school.matricule,
+                                student_limit: this.school.student_limit,
+                                phone_number: this.school.phone_number,
+                                address: this.school.address,
+                                is_active: this.school.is_active
+                            },
+                            timestamp: Date.now()
+                        };
+                        localStorage.setItem("schoolSession", JSON.stringify(session));
+                    }
+                },
+
+                async restoreSession() {
+                    const sessionData = localStorage.getItem("schoolSession");
+                    if (sessionData) {
+                        try {
+                            const session = JSON.parse(sessionData);
+                            const sessionAge = Date.now() - session.timestamp;
+                            const maxSessionAge = 24 * 60 * 60 * 1000;
+                            if (sessionAge < maxSessionAge) {
+                                this.school = session.school;
+                                this.students = await this.getFromLocal();
+                                if (this.isOnline) {
+                                    await this.syncStudents();
+                                } else {
+                                    this.showMessage(`${this.students.length} élèves (local)`, "info");
+                                }
+                            } else {
+                                localStorage.removeItem("schoolSession");
+                            }
+                        } catch (err) {
+                            localStorage.removeItem("schoolSession");
                         }
-                    },
+                    }
+                },
 
-                    // Connexion de l'école
-                    async login() {
-                        this.isLoading = true;
-                        this.message = { text: "", type: "info" };
+                async initIndexedDB() {
+                    return new Promise((resolve) => {
+                        const request = indexedDB.open(DB_NAME, 1);
+                        request.onsuccess = () => {
+                            this.db = request.result;
+                            resolve();
+                        };
+                        request.onupgradeneeded = (e) => {
+                            const db = e.target.result;
+                            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                                db.createObjectStore(STORE_NAME, { keyPath: "id" });
+                            }
+                        };
+                    });
+                },
+
+                async saveToLocal(data) {
+                    return new Promise((resolve) => {
+                        const transaction = this.db.transaction([STORE_NAME], "readwrite");
+                        const store = transaction.objectStore(STORE_NAME);
+                        store.clear();
+                        if (Array.isArray(data)) {
+                            data.forEach(s => store.add(JSON.parse(JSON.stringify(s))));
+                        }
+                        transaction.oncomplete = () => resolve();
+                    });
+                },
+
+                async getFromLocal() {
+                    return new Promise((resolve) => {
+                        const transaction = this.db.transaction([STORE_NAME], "readonly");
+                        const store = transaction.objectStore(STORE_NAME);
+                        const request = store.getAll();
+                        request.onsuccess = () => resolve(request.result || []);
+                    });
+                },
+
+                async login() {
+                    this.isLoading = true;
+                    this.message = { text: "", type: "info" };
+                    try {
+                        if (!this.isOnline) throw new Error("Pas de connexion");
                         const { data, error } = await supabaseClient
                             .from("schools")
                             .select("*")
                             .eq("access_code", this.loginCode.toUpperCase())
                             .single();
-                        if (error) {
-                            this.message = {
-                                text: "Code d'accès invalide.",
-                                type: "error",
-                            };
-                        } else if (!data.is_active) {
-                            this.message = {
-                                text: "Votre compte est en attente d'activation.",
-                                type: "warning",
-                            };
-                        } else {
-                            this.school = data;
-                            await this.fetchStudents();
-                        }
-                        this.isLoading = false;
-                    },
+                        if (error || !data) throw new Error("Code invalide");
+                        if (!data.is_active) throw new Error("Compte inactif");
+                        this.school = data;
+                        this.saveSession();
+                        await this.syncStudents();
+                        this.showMessage("✅ Connecté!", "success");
+                    } catch (err) {
+                        this.showMessage("❌ " + err.message, "error");
+                    }
+                    this.isLoading = false;
+                },
 
-                    // Récupère les élèves
-                    async fetchStudents() {
+                async syncStudents() {
+                    this.isSyncing = true;
+                    try {
+                        if (!this.isOnline) {
+                            this.students = await this.getFromLocal();
+                            this.isSyncing = false;
+                            return;
+                        }
                         const { data, error } = await supabaseClient
                             .from("students")
                             .select("*")
                             .eq("school_id", this.school.id)
-                            .order("last_name", { ascending: true });
-                        if (data) this.students = data;
-                    },
+                            .order("last_name");
+                        if (error) throw error;
+                        this.students = (data || []).map(s => ({ ...s }));
+                        await this.saveToLocal(this.students);
+                        this.lastSync = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                    } catch (err) {
+                        this.students = await this.getFromLocal();
+                    }
+                    this.isSyncing = false;
+                },
 
-                    // Sauvegarde (Ajoute ou Modifie) un élève
-                    async saveStudent() {
-                        if (
-                            this.students.length >= this.school.student_limit &&
-                            !this.editingStudent
-                        ) {
-                            this.message = {
-                                text: "La limite d'élèves a été atteinte.",
-                                type: "warning",
-                            };
+                async autoSync() {
+                    if (this.school && this.isOnline) await this.syncStudents();
+                },
+
+                async saveStudent() {
+                    if (this.students.length >= this.school.student_limit && !this.editingStudent) {
+                        this.showMessage("Limite atteinte", "error");
+                        return;
+                    }
+                    this.isLoading = true;
+                    try {
+                        if (!this.isOnline) {
+                            if (this.editingStudent) {
+                                const i = this.students.findIndex(s => s.id === this.editingStudent.id);
+                                if (i > -1) this.students[i] = { ...this.newStudent };
+                            } else {
+                                this.students.push({ ...this.newStudent, id: 'temp_' + Date.now(), school_id: this.school.id });
+                            }
+                            await this.saveToLocal(this.students);
+                            this.showMessage(this.editingStudent ? "✏️ Modifié (local)" : "➕ Ajouté (local)", "success");
+                            this.resetForm();
                             return;
                         }
-                        this.isLoading = true;
-                        let error;
 
                         if (this.editingStudent) {
-                            // Mode Modification
-                            const { error: updateError } = await supabaseClient
+                            const { error } = await supabaseClient
                                 .from("students")
                                 .update(this.newStudent)
                                 .eq("id", this.editingStudent.id);
-                            error = updateError;
+                            if (error) throw error;
+                            this.showMessage("✏️ Modifié!", "success");
                         } else {
-                            // Mode Ajout
-                            const { error: insertError } = await supabaseClient
+                            const { error } = await supabaseClient
                                 .from("students")
-                                .insert([
-                                    {
-                                        ...this.newStudent,
-                                        school_id: this.school.id,
-                                    },
-                                ]);
-                            error = insertError;
+                                .insert([{ ...this.newStudent, school_id: this.school.id }]);
+                            if (error) throw error;
+                            this.showMessage("➕ Ajouté!", "success");
                         }
-
-                        if (error) {
-                            this.message = {
-                                text: "Erreur lors de l'enregistrement.",
-                                type: "error",
-                            };
-                        } else {
-                            this.message = {
-                                text: this.editingStudent
-                                    ? "Élève modifié !"
-                                    : "Élève ajouté !",
-                                type: "success",
-                            };
-                            this.resetForm();
-                            await this.fetchStudents();
-                        }
-                        this.isLoading = false;
-                    },
-
-                    // Prépare le formulaire pour la modification
-                    editStudent(student) {
-                        this.editingStudent = student;
-                        this.newStudent = { ...student };
-                        // Faire défiler la page vers le formulaire
-                        document
-                            .querySelector(".card-body")
-                            .scrollIntoView({ behavior: "smooth" });
-                    },
-
-                    // Annule le mode modification
-                    cancelEdit() {
                         this.resetForm();
-                    },
+                        await this.syncStudents();
+                    } catch (err) {
+                        this.showMessage("❌ " + err.message, "error");
+                    }
+                    this.isLoading = false;
+                    if (!this.editingStudent) this.showEditModal = false;
+                },
 
-                    // Supprime un élève
-                    async deleteStudent(studentId) {
-                        if (
-                            !confirm(
-                                "Êtes-vous sûr de vouloir supprimer cet élève ?",
-                            )
-                        ) {
+                editStudent(student) {
+                    this.editingStudent = student;
+                    this.newStudent = { ...student };
+                    this.showEditModal = true;
+                },
+
+                cancelEdit() {
+                    this.resetForm();
+                    this.showEditModal = false;
+                },
+
+                async deleteStudent(studentId) {
+                    if (!confirm("Supprimer?")) return;
+                    try {
+                        if (!this.isOnline || studentId.startsWith('temp_')) {
+                            this.students = this.students.filter(s => s.id !== studentId);
+                            await this.saveToLocal(this.students);
+                            this.showMessage("🗑️ Supprimé (local)", "success");
                             return;
                         }
                         const { error } = await supabaseClient
                             .from("students")
                             .delete()
                             .eq("id", studentId);
-                        if (error) {
-                            this.message = {
-                                text: "Erreur lors de la suppression.",
-                                type: "error",
-                            };
-                        } else {
-                            this.message = {
-                                text: "Élève supprimé.",
-                                type: "success",
-                            };
-                            await this.fetchStudents();
-                        }
-                    },
+                        if (error) throw error;
+                        this.showMessage("🗑️ Supprimé!", "success");
+                        await this.syncStudents();
+                    } catch (err) {
+                        this.showMessage("❌ " + err.message, "error");
+                    }
+                },
 
-                    // Exporte la liste en fichier Excel
-                    exportToExcel() {
-                        const ws_data = [["Nom", "Prénom", "Sexe"]]; // En-têtes
-                        this.students.forEach((s) => {
-                            ws_data.push([s.last_name, s.first_name, s.sex]);
-                        });
-                        const ws = XLSX.utils.aoa_to_sheet(ws_data);
-                        const wb = XLSX.utils.book_new();
-                        XLSX.utils.book_append_sheet(wb, ws, "Liste Élèves");
-                        XLSX.writeFile(
-                            wb,
-                            `Liste_Eleves_${this.school.name}_${new Date().toISOString().split("T")[0]}.xlsx`,
-                        );
-                        this.message = {
-                            text: "Fichier Excel généré avec succès.",
-                            type: "success",
-                        };
-                    },
+                exportToExcel() {
+                    const ws_data = [["N°", "Nom", "Prénom", "Sexe"]];
+                    this.students.forEach((s, i) => {
+                        ws_data.push([i + 1, s.last_name, s.first_name, s.sex === 'M' ? 'M' : 'F']);
+                    });
+                    const ws = XLSX.utils.aoa_to_sheet(ws_data);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "Élèves");
+                    XLSX.writeFile(wb, `Eleves_${this.school.name}_${new Date().toISOString().split("T")[0]}.xlsx`);
+                    this.showMessage("📊 Exporté!", "success");
+                },
 
-                    // Réinitialise le formulaire
-                    resetForm() {
-                        this.newStudent = {
-                            first_name: "",
-                            last_name: "",
-                            sex: "M",
-                        };
-                        this.editingStudent = null;
-                    },
+                resetForm() {
+                    this.newStudent = { first_name: "", last_name: "", sex: "M" };
+                    this.editingStudent = null;
+                },
 
-                    // Actions utilisateur
-                    printList() {
-                        window.print();
-                    },
-                    logout() {
+                showMessage(text, type) {
+                    this.message = { text, type };
+                    setTimeout(() => { this.message = { text: "", type: "info" }; }, 3000);
+                },
+
+                logout() {
+                    if (confirm("Déconnexion?")) {
                         this.school = null;
                         this.students = [];
                         this.loginCode = "";
-                        window.history.pushState(
-                            {},
-                            document.title,
-                            window.location.pathname,
+                        localStorage.removeItem("schoolSession");
+                        window.history.pushState({}, document.title, window.location.pathname);
+                        this.showMessage("✅ Déconnecté", "success");
+                    }
+                },
+
+                resetFilters() {
+                    this.searchText = "";
+                    this.filterSex = "";
+                    this.sortBy = "nom";
+                },
+
+                get filteredStudents() {
+                    let filtered = this.students;
+
+                    // Filtre par recherche
+                    if (this.searchText.trim()) {
+                        const search = this.searchText.toLowerCase();
+                        filtered = filtered.filter(s => 
+                            s.last_name.toLowerCase().includes(search) ||
+                            s.first_name.toLowerCase().includes(search)
                         );
-                    },
-                };
-            }
-        </script>
-    </body>
+                    }
+
+                    // Filtre par sexe
+                    if (this.filterSex) {
+                        filtered = filtered.filter(s => s.sex === this.filterSex);
+                    }
+
+                    // Tri
+                    filtered.sort((a, b) => {
+                        if (this.sortBy === "nom") {
+                            return a.last_name.localeCompare(b.last_name);
+                        } else if (this.sortBy === "nom-desc") {
+                            return b.last_name.localeCompare(a.last_name);
+                        } else if (this.sortBy === "date") {
+                            return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+                        }
+                        return 0;
+                    });
+
+                    return filtered;
+                }
+            };
+        }
+    </script>
+</body>
 </html>
