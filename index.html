@@ -125,73 +125,8 @@
                 flex-direction: column;
                 overflow: hidden;
             }
-
-            .header-info {
-                padding: 12px 16px !important;
-                gap: 8px !important;
-            }
-
-            .header-info h1 {
-                font-size: 18px !important;
-            }
-
-            .header-info p {
-                font-size: 11px !important;
-            }
-
-            .sync-indicator {
-                font-size: 11px !important;
-                padding: 3px 6px !important;
-            }
-
-            .win-button-primary {
-                padding: 10px 12px !important;
-                font-size: 14px !important;
-            }
-
-            .win-input {
-                padding: 10px 8px !important;
-                font-size: 14px !important;
-            }
-
-            table {
-                font-size: 12px !important;
-            }
-
-            .px-4 {
-                padding-left: 8px !important;
-                padding-right: 8px !important;
-            }
-
-            .py-3 {
-                padding-top: 8px !important;
-                padding-bottom: 8px !important;
-            }
-
-            .grid-cols-3 {
-                grid-template-columns: 1fr 1fr 1fr !important;
-                gap: 8px !important;
-            }
-
-            .p-6 {
-                padding: 12px !important;
-            }
-
-            .p-4 {
-                padding: 12px !important;
-            }
-
-            .space-y-6 > * + * {
-                margin-top: 16px !important;
-            }
-
-            .md\:grid-cols-4 {
-                grid-template-columns: 1fr 1fr !important;
-                gap: 8px !important;
-            }
         }
 
-        /* Responsive buttons */
         .win-button {
             background: #e8e8e8;
             border: 1px solid #d0d0d0;
@@ -202,18 +137,11 @@
             font-weight: 500;
             color: #000;
             transition: all 0.1s;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            overflow: hidden;
         }
 
         .win-button:hover {
             background: #d8d8d8;
             border-color: #b0b0b0;
-        }
-
-        .win-button:active {
-            background: #c8c8c8;
         }
 
         .win-button-primary {
@@ -254,7 +182,6 @@
             border-radius: 2px;
             font-size: 12px;
             color: #666;
-            flex-wrap: wrap;
         }
 
         .sync-indicator.syncing {
@@ -267,67 +194,11 @@
             height: 8px;
             border-radius: 50%;
             background: #666;
-            flex-shrink: 0;
         }
 
         .sync-dot.active {
             background: #0078d4;
             animation: pulse 1s infinite;
-        }
-
-        /* Draggable window */
-        .draggable-header {
-            cursor: move;
-            user-select: none;
-        }
-
-        .app-container.dragging {
-            opacity: 0.9;
-        }
-
-        .window-controls {
-            display: flex;
-            gap: 2px;
-        }
-
-        .window-btn {
-            width: 36px;
-            height: 28px;
-            border: 1px solid transparent;
-            background: 0;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #000;
-            font-size: 16px;
-            transition: all 0.1s;
-            border-radius: 2px;
-        }
-
-        .window-btn:hover {
-            background: #e8e8e8;
-            border: 1px solid #d0d0d0;
-        }
-
-        .window-btn.minimize:hover {
-            background: #e0e0e0;
-        }
-
-        .window-btn.maximize:hover {
-            background: #e0e0e0;
-        }
-
-        .window-btn.close:hover {
-            background: #e81123;
-            color: white;
-        }
-
-        .message-box {
-            font-size: 13px;
-            padding: 12px;
-            border-radius: 2px;
-            margin-top: 12px;
         }
 
         @media print {
@@ -339,224 +210,175 @@
 </head>
 <body x-data="schoolApp()" x-init="initApp()">
     <div class="app-container" :style="isMinimized ? 'height: 32px; max-height: 32px;' : ''">
-        <!-- Barre de titre Windows (Desktop seulement) -->
-        <div class="titlebar draggable-header" @mousedown="startDrag">
+        <div class="titlebar" @mousedown="startDrag">
             <div class="titlebar-icon">
                 <svg fill="currentColor" viewBox="0 0 24 24">
                     <path d="M19 21V5c0-1.1-.9-2-2-2H7c-1.1 0-2 .9-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                 </svg>
             </div>
             <div class="titlebar-text">Portail École - Inspection de l'Éducation</div>
-            <div class="window-controls">
-                <button @click="isMinimized = !isMinimized" class="window-btn minimize" title="Réduire">
-                    <span>_</span>
-                </button>
-                <button @click="isMaximized = !isMaximized" class="window-btn maximize" title="Agrandir">
-                    <span x-text="isMaximized ? '❐' : '☐'"></span>
-                </button>
-                <button @click="logout()" class="window-btn close" title="Fermer">
-                    <span>✕</span>
-                </button>
+            <div style="display: flex; gap: 2px;">
+                <button @click="isMinimized = !isMinimized" class="window-btn" style="width:36px; height:28px; border:1px solid transparent; background:0; cursor:pointer; display:flex; align-items:center; justify-content:center;">_</button>
+                <button @click="isMaximized = !isMaximized" class="window-btn" style="width:36px; height:28px; border:1px solid transparent; background:0; cursor:pointer; display:flex; align-items:center; justify-content:center;" x-text="isMaximized ? '❐' : '☐'"></button>
+                <button @click="logout()" class="window-btn" style="width:36px; height:28px; border:1px solid transparent; background:0; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#000;" onmouseover="this.style.background='#e81123'; this.style.color='white';" onmouseout="this.style.background='0'; this.style.color='#000';">✕</button>
             </div>
         </div>
 
-        <!-- Contenu principal -->
         <div class="content-wrapper">
-            <!-- En-tête avec info école (après connexion) -->
-            <div x-show="school" class="border-b border-gray-300 bg-gray-50 flex-shrink-0">
-                <div class="flex items-center justify-between header-info p-4 gap-4">
-                    <div class="flex items-center gap-3 flex-1 min-w-0">
-                        <div class="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold flex-shrink-0">
+            <div x-show="school" class="border-b border-gray-300 bg-gray-50 p-4" style="flex-shrink: 0;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+                    <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                        <div style="width: 48px; height: 48px; background: linear-gradient(to bottom right, #0078d4, #005a9e); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 24px;">
                             <span x-text="school.name.charAt(0)"></span>
                         </div>
-                        <div class="min-w-0 flex-1">
-                            <h1 class="text-base md:text-lg font-bold text-gray-900 truncate" x-text="school.name"></h1>
-                            <p class="text-xs text-gray-600 truncate" x-text="`${school.access_code} • ${school.matricule}`"></p>
+                        <div>
+                            <h1 style="margin: 0; font-size: 18px; font-weight: bold; color: #333;" x-text="school.name"></h1>
+                            <p style="margin: 4px 0 0 0; font-size: 12px; color: #666;" x-text="`${school.access_code} • ${school.matricule}`"></p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2 flex-shrink-0">
-                        <div :class="`sync-indicator ${isSyncing ? 'syncing' : ''} ${!isOnline ? 'bg-red-100' : ''}`">
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <div :class="`sync-indicator ${isSyncing ? 'syncing' : ''}`">
                             <div class="sync-dot" :class="{ active: isSyncing }"></div>
-                            <span x-text="isSyncing ? '⟳' : isOnline ? '✓' : '✕'" class="hidden md:inline"></span>
+                            <span x-text="isSyncing ? '⟳ Sync' : isOnline ? '✓ En ligne' : '✕ Hors ligne'"></span>
                         </div>
-                        <button @click="logout()" class="win-button text-xs md:text-sm px-2 md:px-4">Déco</button>
+                        <button @click="logout()" class="win-button" style="font-size: 12px; padding: 6px 12px;">Déco</button>
                     </div>
                 </div>
             </div>
 
-            <!-- Vue de connexion -->
-            <div x-show="!school" class="flex-1 flex items-center justify-center p-4 overflow-y-auto">
-                <div class="bg-white border border-gray-300 rounded p-6 w-full max-w-sm">
-                    <div class="mb-6">
-                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Portail École</h2>
-                        <p class="text-gray-600 text-sm">Accédez à votre espace</p>
-                    </div>
-                    <form @submit.prevent="login()" class="space-y-4">
+            <div x-show="!school" style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; overflow-y: auto;">
+                <div style="background: white; border: 1px solid #ccc; border-radius: 4px; padding: 24px; width: 100%; max-width: 400px;">
+                    <h2 style="font-size: 24px; font-weight: bold; color: #333; margin: 0 0 8px 0;">Portail École</h2>
+                    <p style="color: #666; font-size: 14px; margin: 0 0 24px 0;">Accédez à votre espace</p>
+                    <form @submit.prevent="login()" style="display: flex; flex-direction: column; gap: 16px;">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Code d'accès</label>
-                            <input 
-                                type="text" 
-                                x-model="loginCode" 
-                                @keyup.enter="login()"
-                                placeholder="ABC123" 
-                                class="win-input" 
-                                required 
-                                autofocus
-                            />
+                            <label style="display: block; font-size: 13px; font-weight: 500; color: #333; margin-bottom: 4px;">Code d'accès</label>
+                            <input type="text" x-model="loginCode" @keyup.enter="login()" placeholder="ABC123" class="win-input" required autofocus />
                         </div>
-                        <button 
-                            type="submit" 
-                            class="win-button-primary w-full"
-                            :disabled="isLoading"
-                        >
+                        <button type="submit" class="win-button-primary" style="width: 100%;" :disabled="isLoading">
                             <span x-show="!isLoading">Se connecter</span>
                             <span x-show="isLoading">Connexion...</span>
                         </button>
                     </form>
-                    <div x-show="message.text" :class="`message-box ${message.type === 'error' ? 'bg-red-50 border border-red-300 text-red-800' : 'bg-green-50 border border-green-300 text-green-800'}`" x-text="message.text"></div>
-                    <div class="mt-6 p-3 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
-                        💾 Données locales + Sync auto
-                    </div>
+                    <div x-show="message.text" style="font-size: 13px; padding: 12px; border-radius: 2px; margin-top: 12px;" :class="`${message.type === 'error' ? 'background: #fee; border: 1px solid #f88; color: #c33;' : 'background: #efe; border: 1px solid #8f8; color: #3c3;'}`" x-text="message.text"></div>
                 </div>
             </div>
 
-            <!-- Tableau de bord de l'école -->
-            <div x-show="school" class="flex-1 overflow-y-auto" id="print-area">
-                <div class="p-4 md:p-6 space-y-4 md:space-y-6">
+            <div x-show="school" style="flex: 1; overflow-y: auto;">
+                <div style="padding: 24px; display: flex; flex-direction: column; gap: 24px;">
                     <!-- Statistiques -->
-                    <div class="grid grid-cols-3 gap-2 md:gap-4">
-                        <div class="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 p-3 md:p-4 rounded-lg">
-                            <p class="text-xs md:text-sm font-medium text-gray-700">Limite</p>
-                            <p class="text-2xl md:text-3xl font-bold text-blue-700 mt-1" x-text="school.student_limit"></p>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                        <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 1px solid #90caf9; padding: 16px; border-radius: 8px;">
+                            <p style="margin: 0; font-size: 13px; font-weight: 500; color: #666;">Limite</p>
+                            <p style="margin: 8px 0 0 0; font-size: 32px; font-weight: bold; color: #0078d4;" x-text="school.student_limit"></p>
                         </div>
-                        <div class="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 p-3 md:p-4 rounded-lg">
-                            <p class="text-xs md:text-sm font-medium text-gray-700">Enregistrés</p>
-                            <p class="text-2xl md:text-3xl font-bold text-green-700 mt-1" x-text="students.length"></p>
+                        <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 1px solid #81c784; padding: 16px; border-radius: 8px;">
+                            <p style="margin: 0; font-size: 13px; font-weight: 500; color: #666;">Enregistrés</p>
+                            <p style="margin: 8px 0 0 0; font-size: 32px; font-weight: bold; color: #388e3c;" x-text="students.length"></p>
                         </div>
-                        <div class="bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 p-3 md:p-4 rounded-lg">
-                            <p class="text-xs md:text-sm font-medium text-gray-700">Restants</p>
-                            <p class="text-2xl md:text-3xl font-bold text-amber-700 mt-1" x-text="school.student_limit - students.length"></p>
+                        <div style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border: 1px solid #ffb74d; padding: 16px; border-radius: 8px;">
+                            <p style="margin: 0; font-size: 13px; font-weight: 500; color: #666;">Restants</p>
+                            <p style="margin: 8px 0 0 0; font-size: 32px; font-weight: bold; color: #f57f17;" x-text="school.student_limit - students.length"></p>
                         </div>
                     </div>
 
-                    <!-- Formulaire d'ajout/modification -->
-                    <div class="bg-gray-50 border border-gray-300 p-3 md:p-4 rounded-lg">
-                        <h3 class="font-bold text-sm md:text-base text-gray-900 mb-3" x-text="editingStudent ? 'Modifier un élève' : 'Ajouter un nouvel élève'"></h3>
-                        <form @submit.prevent="saveStudent()" class="grid gap-2 md:gap-3">
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-3">
-                                <input 
-                                    type="text" 
-                                    x-model="newStudent.last_name" 
-                                    placeholder="Nom" 
-                                    required 
-                                    class="win-input"
-                                />
-                                <input 
-                                    type="text" 
-                                    x-model="newStudent.first_name" 
-                                    placeholder="Prénom" 
-                                    required 
-                                    class="win-input"
-                                />
+                    <!-- Formulaire -->
+                    <div style="background: #f5f5f5; border: 1px solid #d0d0d0; padding: 16px; border-radius: 4px;">
+                        <h3 style="margin: 0 0 12px 0; font-weight: bold; font-size: 16px; color: #333;" x-text="editingStudent ? 'Modifier un élève' : 'Ajouter un nouvel élève'"></h3>
+                        <form @submit.prevent="saveStudent()" style="display: grid; gap: 12px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <input type="text" x-model="newStudent.last_name" placeholder="Nom" required class="win-input" />
+                                <input type="text" x-model="newStudent.first_name" placeholder="Prénom" required class="win-input" />
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
                                 <select x-model="newStudent.sex" class="win-input">
                                     <option value="M">Masculin</option>
                                     <option value="F">Féminin</option>
                                 </select>
-                                <button 
-                                    type="submit" 
-                                    class="win-button-primary"
-                                    :disabled="isLoading || (school && students.length >= school.student_limit && !editingStudent)"
-                                >
-                                    <span x-show="!isLoading" x-text="editingStudent ? '↪ MAJ' : '➕ Ajouter'"></span>
-                                    <span x-show="isLoading">...</span>
-                                </button>
+                                <input type="date" x-model="newStudent.birth_date" class="win-input" />
+                                <select x-model="newStudent.birth_place" class="win-input">
+                                    <option value="">-- Sélectionner --</option>
+                                    <option value="Bouenza">Bouenza</option>
+                                    <option value="Brazzaville">Brazzaville</option>
+                                    <option value="Congo-Oubangui">Congo-Oubangui</option>
+                                    <option value="Cuvette">Cuvette</option>
+                                    <option value="Cuvette-Ouest">Cuvette-Ouest</option>
+                                    <option value="Djoué-Léfini">Djoué-Léfini</option>
+                                    <option value="Kouilou">Kouilou</option>
+                                    <option value="Lékoumou">Lékoumou</option>
+                                    <option value="Likouala">Likouala</option>
+                                    <option value="Niari">Niari</option>
+                                    <option value="Nkéni-Alima">Nkéni-Alima</option>
+                                    <option value="Plateaux">Plateaux</option>
+                                    <option value="Pointe-Noire">Pointe-Noire</option>
+                                    <option value="Pool">Pool</option>
+                                    <option value="Sangha">Sangha</option>
+                                </select>
                             </div>
+                            <button type="submit" class="win-button-primary" :disabled="isLoading || (school && students.length >= school.student_limit && !editingStudent)">
+                                <span x-show="!isLoading" x-text="editingStudent ? '↪ MAJ' : '➕ Ajouter'"></span>
+                                <span x-show="isLoading">...</span>
+                            </button>
                             <template x-if="editingStudent">
-                                <button type="button" @click="cancelEdit()" class="win-button text-xs">✕ Annuler modification</button>
-                            </template>
-                            <template x-if="students.length >= school.student_limit && !editingStudent">
-                                <div class="p-2 bg-amber-50 border border-amber-300 rounded text-xs text-amber-800">
-                                    ⚠️ Limite d'élèves atteinte
-                                </div>
+                                <button type="button" @click="cancelEdit()" class="win-button" style="font-size: 12px;">✕ Annuler modification</button>
                             </template>
                         </form>
                     </div>
 
-                    <!-- Liste des élèves -->
-                    <div class="bg-white border border-gray-300 rounded-lg overflow-hidden flex flex-col">
-                        <div class="border-b border-gray-300 p-3 md:p-4 bg-gray-50 flex justify-between items-center gap-2 flex-shrink-0">
-                            <h3 class="font-bold text-sm md:text-base text-gray-900">Élèves (<span x-text="students.length"></span>)</h3>
-                            <div class="flex gap-2 items-center">
-                                <button @click="showFilters = !showFilters" class="win-button text-xs md:text-sm px-2 md:px-4" style="background: #0078d4; color: white; border: 1px solid #005a9e;">
+                    <!-- Tableau -->
+                    <div style="background: white; border: 1px solid #d0d0d0; border-radius: 4px; overflow: hidden; display: flex; flex-direction: column;">
+                        <div style="border-bottom: 1px solid #d0d0d0; padding: 12px 16px; background: #f9f9f9; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="margin: 0; font-weight: bold; font-size: 14px;">Élèves (<span x-text="students.length"></span>)</h3>
+                            <div style="display: flex; gap: 8px;">
+                                <button @click="showFilters = !showFilters" class="win-button" style="font-size: 12px; padding: 6px 12px; background: #0078d4; color: white; border: 1px solid #005a9e;">
                                     <span x-text="showFilters ? '🔍 Fermer' : '⚙️ Filtres'"></span>
                                 </button>
-                                <button @click="exportToExcel()" class="win-button text-xs md:text-sm px-2 md:px-4" :disabled="students.length === 0">
-                                    📊 Excel
-                                </button>
+                                <button @click="exportToExcel()" class="win-button" style="font-size: 12px; padding: 6px 12px;" :disabled="students.length === 0">📊 Excel</button>
                             </div>
                         </div>
 
-                        <!-- Barre de recherche et filtres VISIBLE -->
-                        <div x-show="showFilters" x-transition class="border-b border-gray-300 bg-blue-50 p-4 space-y-3 flex-shrink-0">
-                            <div>
-                                <label class="block text-xs md:text-sm font-medium text-gray-700 mb-2">🔍 Rechercher</label>
-                                <input 
-                                    type="text" 
-                                    x-model="searchText" 
-                                    placeholder="Nom ou prénom..." 
-                                    class="win-input text-xs md:text-sm"
-                                />
-                            </div>
-                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                <div>
-                                    <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">👥 Sexe</label>
-                                    <select x-model="filterSex" class="win-input text-xs md:text-sm">
-                                        <option value="">Tous</option>
-                                        <option value="M">Masculin</option>
-                                        <option value="F">Féminin</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">🔤 Tri</label>
-                                    <select x-model="sortBy" class="win-input text-xs md:text-sm">
-                                        <option value="nom">Nom ↑</option>
-                                        <option value="nom-desc">Nom ↓</option>
-                                        <option value="date">Récent</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs md:text-sm font-medium text-gray-700 mb-1">&nbsp;</label>
-                                    <button @click="resetFilters()" class="win-button w-full text-xs md:text-sm" style="color: #0078d4;">
-                                        ↻ Réinitialiser
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="text-xs text-gray-700 bg-white p-2 rounded border border-blue-200">
-                                <strong>📊 Résultats:</strong> <span x-text="`${filteredStudents.length} / ${students.length}`"></span>
+                        <div x-show="showFilters" x-transition style="border-bottom: 1px solid #d0d0d0; background: #e3f2fd; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+                            <input type="text" x-model="searchText" placeholder="Rechercher par nom ou prénom..." class="win-input" />
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                                <select x-model="filterSex" class="win-input">
+                                    <option value="">Tous les sexes</option>
+                                    <option value="M">Masculin</option>
+                                    <option value="F">Féminin</option>
+                                </select>
+                                <select x-model="sortBy" class="win-input">
+                                    <option value="nom">Nom ↑</option>
+                                    <option value="nom-desc">Nom ↓</option>
+                                    <option value="date">Récent</option>
+                                </select>
+                                <button @click="resetFilters()" class="win-button" style="color: #0078d4;">↻ Réinitialiser</button>
                             </div>
                         </div>
 
-                        <div class="overflow-x-auto flex-1">
-                            <table class="w-full text-xs md:text-sm">
-                                <thead class="bg-gray-100 border-b border-gray-300 sticky top-0">
+                        <div style="overflow-x: auto; flex: 1;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead style="background: #f0f0f0; border-bottom: 1px solid #d0d0d0;">
                                     <tr>
-                                        <th class="px-2 md:px-4 py-2 md:py-3 text-left font-bold text-gray-900">#</th>
-                                        <th class="px-2 md:px-4 py-2 md:py-3 text-left font-bold text-gray-900">Nom</th>
-                                        <th class="px-2 md:px-4 py-2 md:py-3 text-left font-bold text-gray-900">Prénom</th>
-                                        <th class="px-2 md:px-4 py-2 md:py-3 text-left font-bold text-gray-900 hidden sm:table-cell">Sexe</th>
-                                        <th class="px-2 md:px-4 py-2 md:py-3 text-left font-bold text-gray-900">Actions</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: bold; font-size: 13px;">#</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: bold; font-size: 13px;">Nom</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: bold; font-size: 13px;">Prénom</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: bold; font-size: 13px;">Sexe</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: bold; font-size: 13px;">Date de naissance</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: bold; font-size: 13px;">Lieu de naissance</th>
+                                        <th style="padding: 12px; text-align: left; font-weight: bold; font-size: 13px;">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-200">
+                                <tbody>
                                     <template x-for="(student, index) in filteredStudents" :key="student.id">
-                                        <tr class="hover:bg-gray-50">
-                                            <td class="px-2 md:px-4 py-2 md:py-3 text-gray-700" x-text="index + 1"></td>
-                                            <td class="px-2 md:px-4 py-2 md:py-3 text-gray-900 font-medium" x-text="student.last_name"></td>
-                                            <td class="px-2 md:px-4 py-2 md:py-3 text-gray-700" x-text="student.first_name"></td>
-                                            <td class="px-2 md:px-4 py-2 md:py-3 text-gray-700 hidden sm:table-cell" x-text="student.sex === 'M' ? '👨 M' : '👩 F'"></td>
-                                            <td class="px-2 md:px-4 py-2 md:py-3 flex gap-1">
-                                                <button @click="editStudent(student)" class="win-button text-xs px-1 md:px-2">✏️</button>
-                                                <button @click="deleteStudent(student.id)" class="win-button text-xs px-1 md:px-2" style="color: #c50f1f;">🗑️</button>
+                                        <tr style="border-bottom: 1px solid #e0e0e0; hover: background: #f9f9f9;">
+                                            <td style="padding: 12px; font-size: 13px;" x-text="index + 1"></td>
+                                            <td style="padding: 12px; font-size: 13px; font-weight: 500;" x-text="student.last_name"></td>
+                                            <td style="padding: 12px; font-size: 13px;" x-text="student.first_name"></td>
+                                            <td style="padding: 12px; font-size: 13px;" x-text="student.sex === 'M' ? '👨 M' : '👩 F'"></td>
+                                            <td style="padding: 12px; font-size: 13px;" x-text="formatDate(student.birth_date)"></td>
+                                            <td style="padding: 12px; font-size: 13px;" x-text="student.birth_place"></td>
+                                            <td style="padding: 12px; display: flex; gap: 4px;">
+                                                <button @click="editStudent(student)" class="win-button" style="font-size: 12px; padding: 4px 8px;">✏️</button>
+                                                <button @click="deleteStudent(student.id)" class="win-button" style="font-size: 12px; padding: 4px 8px; color: #c50f1f;">🗑️</button>
                                             </td>
                                         </tr>
                                     </template>
@@ -564,16 +386,8 @@
                             </table>
                         </div>
 
-                        <!-- Messages vides -->
                         <template x-if="students.length === 0">
-                            <div class="p-8 text-center text-gray-500 text-sm flex-1 flex items-center justify-center">
-                                Aucun élève
-                            </div>
-                        </template>
-                        <template x-if="students.length > 0 && filteredStudents.length === 0">
-                            <div class="p-8 text-center text-gray-500 text-sm flex-1 flex items-center justify-center">
-                                ❌ Aucun résultat pour votre recherche
-                            </div>
+                            <div style="padding: 32px; text-align: center; color: #999; font-size: 14px;">Aucun élève</div>
                         </template>
                     </div>
                 </div>
@@ -581,117 +395,60 @@
         </div>
     </div>
 
-    <!-- POP-UP FILTRES -->
-    <div x-show="showFilters" x-transition class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full" @click.away="showFilters = false">
-            <!-- En-tête -->
-            <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-4 flex justify-between items-center text-white rounded-t-lg">
-                <h2 class="font-bold text-lg">🔍 Filtres & Recherche</h2>
-                <button @click="showFilters = false" class="text-white hover:bg-blue-700 p-1 rounded">✕</button>
-            </div>
-
-            <!-- Contenu -->
-            <div class="p-6 space-y-4">
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">📝 Rechercher</label>
-                    <input 
-                        type="text" 
-                        x-model="searchText" 
-                        placeholder="Nom ou prénom..." 
-                        class="win-input w-full"
-                        autofocus
-                    />
-                </div>
-
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">👥 Filtrer par sexe</label>
-                    <select x-model="filterSex" class="win-input w-full">
-                        <option value="">Tous les sexes</option>
-                        <option value="M">👨 Masculin</option>
-                        <option value="F">👩 Féminin</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">🔤 Trier par</label>
-                    <select x-model="sortBy" class="win-input w-full">
-                        <option value="nom">📤 Nom (A → Z)</option>
-                        <option value="nom-desc">📥 Nom (Z → A)</option>
-                        <option value="date">🕐 Plus récent</option>
-                    </select>
-                </div>
-
-                <div class="bg-blue-50 border border-blue-200 rounded p-3">
-                    <p class="text-sm font-bold text-gray-800">
-                        📊 <span x-text="`${filteredStudents.length} résultat(s) sur ${students.length}`"></span>
-                    </p>
-                </div>
-            </div>
-
-            <!-- Boutons -->
-            <div class="bg-gray-50 p-4 border-t border-gray-200 rounded-b-lg flex gap-2">
-                <button @click="resetFilters()" class="flex-1 win-button bg-gray-200 font-bold">
-                    ↻ Réinitialiser
-                </button>
-                <button @click="showFilters = false" class="flex-1 win-button-primary font-bold">
-                    ✓ Appliquer
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- POP-UP MODIFICATION ÉLÈVE -->
     <div x-show="showEditModal" x-transition class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full" @click.away="showEditModal = false">
-            <!-- En-tête -->
-            <div class="bg-gradient-to-r from-green-500 to-green-600 p-4 flex justify-between items-center text-white rounded-t-lg">
-                <h2 class="font-bold text-lg">✏️ Modifier l'élève</h2>
-                <button @click="showEditModal = false" class="text-white hover:bg-green-700 p-1 rounded">✕</button>
+        <div style="background: white; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); max-width: 500px; width: 100%;" @click.away="showEditModal = false">
+            <div style="background: linear-gradient(to right, #4caf50, #45a049); padding: 16px; display: flex; justify-content: space-between; align-items: center; color: white; border-radius: 8px 8px 0 0;">
+                <h2 style="margin: 0; font-weight: bold; font-size: 18px;">✏️ Modifier l'élève</h2>
+                <button @click="showEditModal = false" style="background: transparent; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; width: 24px; height: 24px;">✕</button>
             </div>
-
-            <!-- Contenu -->
-            <form @submit.prevent="saveStudent()" class="p-6 space-y-4">
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Nom</label>
-                    <input 
-                        type="text" 
-                        x-model="newStudent.last_name" 
-                        placeholder="Nom complet" 
-                        required 
-                        class="win-input w-full"
-                        autofocus
-                    />
+            <form @submit.prevent="saveStudent()" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 4px;">Nom</label>
+                        <input type="text" x-model="newStudent.last_name" placeholder="Nom" required class="win-input" autofocus />
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 4px;">Prénom</label>
+                        <input type="text" x-model="newStudent.first_name" placeholder="Prénom" required class="win-input" />
+                    </div>
                 </div>
-
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Prénom</label>
-                    <input 
-                        type="text" 
-                        x-model="newStudent.first_name" 
-                        placeholder="Prénom" 
-                        required 
-                        class="win-input w-full"
-                    />
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 4px;">Sexe</label>
+                        <select x-model="newStudent.sex" class="win-input">
+                            <option value="M">Masculin</option>
+                            <option value="F">Féminin</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 4px;">Date de naissance</label>
+                        <input type="date" x-model="newStudent.birth_date" class="win-input" />
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: bold; color: #333; margin-bottom: 4px;">Lieu</label>
+                        <select x-model="newStudent.birth_place" class="win-input">
+                            <option value="">-- Sélectionner --</option>
+                            <option value="Bouenza">Bouenza</option>
+                            <option value="Brazzaville">Brazzaville</option>
+                            <option value="Congo-Oubangui">Congo-Oubangui</option>
+                            <option value="Cuvette">Cuvette</option>
+                            <option value="Cuvette-Ouest">Cuvette-Ouest</option>
+                            <option value="Djoué-Léfini">Djoué-Léfini</option>
+                            <option value="Kouilou">Kouilou</option>
+                            <option value="Lékoumou">Lékoumou</option>
+                            <option value="Likouala">Likouala</option>
+                            <option value="Niari">Niari</option>
+                            <option value="Nkéni-Alima">Nkéni-Alima</option>
+                            <option value="Plateaux">Plateaux</option>
+                            <option value="Pointe-Noire">Pointe-Noire</option>
+                            <option value="Pool">Pool</option>
+                            <option value="Sangha">Sangha</option>
+                        </select>
+                    </div>
                 </div>
-
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2">Sexe</label>
-                    <select x-model="newStudent.sex" class="win-input w-full">
-                        <option value="M">👨 Masculin</option>
-                        <option value="F">👩 Féminin</option>
-                    </select>
-                </div>
-
-                <div class="bg-gray-50 p-3 rounded border border-gray-200">
-                    <p class="text-xs text-gray-600">Cette modification sera synchronisée avec le serveur</p>
-                </div>
-
-                <!-- Boutons -->
-                <div class="flex gap-2 pt-4">
-                    <button type="button" @click="showEditModal = false" class="flex-1 win-button font-bold">
-                        ✕ Annuler
-                    </button>
-                    <button type="submit" class="flex-1 win-button-primary font-bold" :disabled="isLoading">
+                <div style="display: flex; gap: 12px; padding-top: 12px;">
+                    <button type="button" @click="showEditModal = false" class="win-button" style="flex: 1; font-weight: bold;">✕ Annuler</button>
+                    <button type="submit" class="win-button-primary" style="flex: 1; font-weight: bold;" :disabled="isLoading">
                         <span x-show="!isLoading">✓ Sauvegarder</span>
                         <span x-show="isLoading">⏳ Sauvegarde...</span>
                     </button>
@@ -713,11 +470,16 @@
                 loginCode: "",
                 school: null,
                 students: [],
-                newStudent: { first_name: "", last_name: "", sex: "M" },
+                newStudent: { 
+                    first_name: "", 
+                    last_name: "", 
+                    sex: "M",
+                    birth_date: "",
+                    birth_place: ""
+                },
                 editingStudent: null,
                 isLoading: false,
                 isSyncing: false,
-                lastSync: "Jamais",
                 message: { text: "", type: "info" },
                 isMinimized: false,
                 isMaximized: false,
@@ -726,8 +488,6 @@
                 isDragging: false,
                 dragStart: { x: 0, y: 0 },
                 windowStart: { x: 0, y: 0 },
-
-                // Recherche et filtrage
                 searchText: "",
                 filterSex: "",
                 sortBy: "nom",
@@ -740,13 +500,10 @@
                     this.checkOnlineStatus();
                     window.addEventListener('online', () => this.handleOnline());
                     window.addEventListener('offline', () => this.handleOffline());
-                    
-                    // Support du drag & drop de fenêtre (Desktop uniquement)
                     if (window.innerWidth > 1024) {
                         document.addEventListener('mousemove', (e) => this.handleDrag(e));
                         document.addEventListener('mouseup', () => this.stopDrag());
                     }
-                    
                     await this.restoreSession();
                     const urlParams = new URLSearchParams(window.location.search);
                     const codeFromUrl = urlParams.get("code");
@@ -764,7 +521,6 @@
                     const container = document.querySelector('.app-container');
                     const rect = container.getBoundingClientRect();
                     this.windowStart = { x: rect.left, y: rect.top };
-                    container.classList.add('dragging');
                 },
 
                 handleDrag(e) {
@@ -776,20 +532,15 @@
                     container.style.left = (this.windowStart.x + dx) + 'px';
                     container.style.top = (this.windowStart.y + dy) + 'px';
                     container.style.margin = '0';
-                    container.style.maxWidth = '1200px';
                     container.style.zIndex = '1000';
                 },
 
                 stopDrag() {
-                    if (!this.isDragging) return;
                     this.isDragging = false;
-                    const container = document.querySelector('.app-container');
-                    container.classList.remove('dragging');
                 },
 
                 checkOnlineStatus() {
                     this.isOnline = navigator.onLine;
-                    console.log("Connexion:", this.isOnline ? "En ligne" : "Hors ligne");
                 },
 
                 handleOnline() {
@@ -921,7 +672,6 @@
                         if (error) throw error;
                         this.students = (data || []).map(s => ({ ...s }));
                         await this.saveToLocal(this.students);
-                        this.lastSync = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
                     } catch (err) {
                         this.students = await this.getFromLocal();
                     }
@@ -972,7 +722,7 @@
                         this.showMessage("❌ " + err.message, "error");
                     }
                     this.isLoading = false;
-                    if (!this.editingStudent) this.showEditModal = false;
+                    this.showEditModal = false;
                 },
 
                 editStudent(student) {
@@ -1008,19 +758,56 @@
                 },
 
                 exportToExcel() {
-                    const ws_data = [["N°", "Nom", "Prénom", "Sexe"]];
+                    // Entête avec info école
+                    const ws_data = [
+                        ["RAPPORT D'EFFECTIF SCOLAIRE"],
+                        [],
+                        ["Nom de l'école:", this.school.name],
+                        ["Code d'accès:", this.school.access_code],
+                        ["Matricule:", this.school.matricule],
+                        ["Effectif total:", this.students.length],
+                        ["Limite:", this.school.student_limit],
+                        ["Date d'export:", new Date().toLocaleDateString('fr-FR')],
+                        [],
+                        ["N°", "Nom", "Prénom", "Sexe", "Date de naissance", "Lieu de naissance"]
+                    ];
+
+                    // Données des élèves
                     this.students.forEach((s, i) => {
-                        ws_data.push([i + 1, s.last_name, s.first_name, s.sex === 'M' ? 'M' : 'F']);
+                        ws_data.push([
+                            i + 1, 
+                            s.last_name, 
+                            s.first_name, 
+                            s.sex === 'M' ? 'M' : 'F',
+                            this.formatDate(s.birth_date),
+                            s.birth_place || ''
+                        ]);
                     });
+
                     const ws = XLSX.utils.aoa_to_sheet(ws_data);
+                    ws['!cols'] = [
+                        { wch: 5 },
+                        { wch: 20 },
+                        { wch: 20 },
+                        { wch: 8 },
+                        { wch: 18 },
+                        { wch: 18 }
+                    ];
+
                     const wb = XLSX.utils.book_new();
                     XLSX.utils.book_append_sheet(wb, ws, "Élèves");
-                    XLSX.writeFile(wb, `Eleves_${this.school.name}_${new Date().toISOString().split("T")[0]}.xlsx`);
-                    this.showMessage("📊 Exporté!", "success");
+                    XLSX.writeFile(wb, `Effectif_${this.school.name}_${new Date().toISOString().split("T")[0]}.xlsx`);
+                    this.showMessage("📊 Exporté avec succès!", "success");
                 },
 
                 resetForm() {
-                    this.newStudent = { first_name: "", last_name: "", sex: "M" };
+                    this.newStudent = { 
+                        first_name: "", 
+                        last_name: "", 
+                        sex: "M",
+                        birth_date: "",
+                        birth_place: ""
+                    };
                     this.editingStudent = null;
                 },
 
@@ -1046,10 +833,15 @@
                     this.sortBy = "nom";
                 },
 
+                formatDate(dateString) {
+                    if (!dateString) return '';
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('fr-FR');
+                },
+
                 get filteredStudents() {
                     let filtered = this.students;
 
-                    // Filtre par recherche
                     if (this.searchText.trim()) {
                         const search = this.searchText.toLowerCase();
                         filtered = filtered.filter(s => 
@@ -1058,12 +850,10 @@
                         );
                     }
 
-                    // Filtre par sexe
                     if (this.filterSex) {
                         filtered = filtered.filter(s => s.sex === this.filterSex);
                     }
 
-                    // Tri
                     filtered.sort((a, b) => {
                         if (this.sortBy === "nom") {
                             return a.last_name.localeCompare(b.last_name);
@@ -1080,5 +870,3 @@
             };
         }
     </script>
-</body>
-</html>
